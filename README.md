@@ -366,6 +366,8 @@ Iranux Runner/App performs lightweight runtime work:
 - inspect the process exit code;
 - detect the final marker.
 
+For implementation by an AI coding agent, use the deterministic flow in `docs/implementation/ai-app-integration-guide.md`.
+
 ## Compatibility policy
 
 - v1.0 documents remain valid under the v1.0 schema.
@@ -379,12 +381,13 @@ Iranux Runner/App performs lightweight runtime work:
 - `docs/specification/iranux-bash-script-standard-v1.1.md`
 - `docs/implementation/ui-metadata-v1.1.md`
 - `docs/implementation/mdi-icon-validation.md`
+- `docs/implementation/ai-app-integration-guide.md`
+- `docs/migration/v1.0-to-v1.1.md`
 - `docs/validator/validator-rules-v1.1.md`
 - `schemas/iranux-metadata-v1.1.schema.json`
 - `schemas/iranux-param-v1.0.schema.json`
-- `samples/v1.1/`
+- `Samples/v1.1/`
 - `tests/valid/`
-- `tests/invalid/`
 
 ## Out of scope
 
