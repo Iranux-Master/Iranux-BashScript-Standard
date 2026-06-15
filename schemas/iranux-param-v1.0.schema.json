@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iranux.org/schemas/iranux-param-v1.0.schema.json",
+  "title": "Iranux Parameter Metadata v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "label", "description", "type", "required"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "enum": [
+        "string",
+        "multiline",
+        "int",
+        "float",
+        "bool",
+        "enum",
+        "multi_select",
+        "password",
+        "secret",
+        "port",
+        "email",
+        "url",
+        "domain",
+        "hostname",
+        "ip",
+        "ipv4",
+        "ipv6",
+        "cidr",
+        "mac",
+        "path",
+        "date",
+        "time",
+        "datetime",
+        "duration",
+        "size",
+        "cron",
+        "json",
+        "ssh_public_key",
+        "private_key",
+        "certificate"
+      ]
+    },
+    "required": {
+      "type": "boolean"
+    },
+    "default": true,
+    "example": true,
+    "placeholder": {
+      "type": "string"
+    },
+    "group": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sensitive": {
+      "type": "boolean"
+    },
+    "options": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {}
+        }
+      }
+    },
+    "validation": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": ["enum", "multi_select"]
+          }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "required": ["options"]
+      }
+    }
+  ]
+}
