@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iranux.org/schemas/iranux-metadata-v1.1.schema.json",
+  "title": "Iranux Bash Script Metadata v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "standard",
+    "script",
+    "risk",
+    "ui"
+  ],
+  "properties": {
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema_version"],
+      "properties": {
+        "name": {
+          "const": "iranux-script-metadata"
+        },
+        "schema_version": {
+          "const": "1.1"
+        }
+      }
+    },
+    "script": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level"],
+      "properties": {
+        "level": {
+          "enum": ["safe", "low", "medium", "high", "dangerous"]
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requires_root": {
+          "type": "boolean",
+          "default": false
+        },
+        "requires_internet": {
+          "type": "boolean",
+          "default": false
+        },
+        "supported_os": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        },
+        "required_commands": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "action", "icon"],
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/group"
+        },
+        "action": {
+          "$ref": "#/$defs/group"
+        },
+        "icon": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["library", "name"],
+          "properties": {
+            "library": {
+              "const": "mdi"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
