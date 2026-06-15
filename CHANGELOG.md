@@ -20,7 +20,9 @@ Also added:
 - UI implementation guidance;
 - MDI validation guidance;
 - Validator rules;
-- valid and invalid v1.1 fixtures.
+- one valid v1.1 metadata fixture;
+- one v1.1 Nginx installer sample;
+- one migration guide from v1.0 to v1.1.
 
 Compatibility notes:
 
