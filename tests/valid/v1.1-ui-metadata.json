@@ -1,0 +1,35 @@
+{
+  "standard": {
+    "name": "iranux-script-metadata",
+    "schema_version": "1.1"
+  },
+  "script": {
+    "id": "show-network-summary",
+    "name": "Show Network Summary",
+    "version": "1.0.0",
+    "description": "Displays a concise network summary."
+  },
+  "risk": {
+    "level": "safe"
+  },
+  "requirements": {
+    "requires_root": false,
+    "requires_internet": false,
+    "supported_os": ["ubuntu", "debian"],
+    "required_commands": []
+  },
+  "ui": {
+    "category": {
+      "id": "network",
+      "name": "Network and IP"
+    },
+    "action": {
+      "id": "network-information",
+      "name": "Network Information"
+    },
+    "icon": {
+      "library": "mdi",
+      "name": "network"
+    }
+  }
+}
