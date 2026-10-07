@@ -22,6 +22,7 @@
           "label": {
             "type": "string",
             "minLength": 1,
+            "pattern": "\\S",
             "maxLength": 80
           },
           "value": {
@@ -40,7 +41,7 @@
                 "additionalProperties": false,
                 "required": ["label"],
                 "properties": {
-                  "label": { "type": "string", "minLength": 1, "maxLength": 80 }
+                  "label": { "type": "string", "minLength": 1, "maxLength": 80, "pattern": "\\S" }
                 }
               }
             }

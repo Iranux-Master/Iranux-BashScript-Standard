@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Iranux v1.2 sample: a read-only (risk "safe") report with Persian text, a basic
-# and an advanced parameter, no root, no network, and an IRANUX_RESULT line.
+# and an advanced parameter, no root, no network, and an IRANUX_RESULT line. It needs
+# GNU coreutils and procps, hence the list of supported systems.
 
 : <<'IRANUX_METADATA'
 {
@@ -27,7 +28,7 @@
   "requirements": {
     "requires_root": false,
     "requires_internet": false,
-    "supported_os": [],
+    "supported_os": ["ubuntu", "debian", "rhel", "centos", "almalinux", "rocky", "ol", "fedora", "amzn", "arch"],
     "required_commands": ["df", "free", "ps"]
   },
   "ui": {
@@ -143,7 +144,8 @@ df -h -x tmpfs -x devtmpfs
 DISK_USED_PERCENT="$(df --output=pcent / | tail -n 1 | tr -dc '0-9')"
 
 echo "== Top ${TOP_PROCESSES} processes by CPU"
-ps -eo pid,user,%cpu,%mem,comm --sort=-%cpu | head -n "$((TOP_PROCESSES + 1))"
+# awk reads all of ps's output, so ps never gets SIGPIPE (head would, and pipefail would abort).
+ps -eo pid,user,%cpu,%mem,comm --sort=-%cpu | awk -v n="$((TOP_PROCESSES + 1))" 'NR <= n'
 
 FAILED_SERVICES="not checked"
 if [[ "$INCLUDE_SERVICES" == "true" ]] && command -v systemctl >/dev/null 2>&1; then

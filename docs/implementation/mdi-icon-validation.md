@@ -14,7 +14,7 @@ Examples:
 dns
 server-security
 network
-firewall
+wall-fire
 restart
 script-text-outline
 ```
@@ -62,7 +62,7 @@ Examples:
 | Complete network information | `network` |
 | Remote port test | `lan-connect` |
 | Server security setup | `server-security` |
-| Firewall status | `firewall` |
+| Firewall status | `wall-fire` |
 | Restart service | `restart` |
 | View logs | `text-box-search-outline` |
 | Install package | `package-variant-closed-plus` |

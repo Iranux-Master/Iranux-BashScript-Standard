@@ -1,6 +1,11 @@
-# Iranux Bash Script Standard
+# Iranux Script Specification
 
-**A self-contained metadata and execution-contract standard for Bash scripts that
+> Formerly "Iranux Bash Script Standard". Version 1.0 and 1.1 documents keep their
+> original titles as historical versions. Persian: «مشخصات فنی اسکریپت Iranux», short
+> form «مشخصات اسکریپت Iranux». The `IRANUX_*` block names, the `standard` JSON key and
+> the "Iranux Compatible" / "Iranux Verified" badges are unchanged.
+
+**A self-contained metadata and execution-contract specification for Bash scripts that
 Iranux runs on Linux servers.**
 
 > Current version: **1.2** (2026-10). Versions 1.0 and 1.1 remain valid for scripts
@@ -16,7 +21,7 @@ who is not a Linux expert.
 
 | Version | Date | Status | Specification | What it added |
 |---|---|---|---|---|
-| 1.2 | 2026-10 | current | [`docs/specification/iranux-bash-script-standard-v1.2.md`](docs/specification/iranux-bash-script-standard-v1.2.md) | localized text (`i18n`, Persian first), basic/advanced parameters, generated values, the `IRANUX_RESULT` line, `estimated_minutes`; complete rules for certification, exit codes, transport, OS identifiers, risk levels, security |
+| 1.2 | 2026-10 | current | [`docs/specification/iranux-script-specification-v1.2.md`](docs/specification/iranux-script-specification-v1.2.md) | localized text (`i18n`, Persian first), basic/advanced parameters, generated values, the `IRANUX_RESULT` line, `estimated_minutes`; complete rules for certification, exit codes, transport, OS identifiers, risk levels, security |
 | 1.1 | 2026-06-16 | valid | [`docs/specification/iranux-bash-script-standard-v1.1.md`](docs/specification/iranux-bash-script-standard-v1.1.md) | required `ui` object: category, action, Material Design Icon |
 | 1.0 | 2026-05 | valid | the rules the v1.1 specification inherits, and `schemas/iranux-param-v1.0.schema.json` | metadata, parameters, certification concept, final marker |
 
@@ -93,7 +98,7 @@ result line tells the user what came out.
 | `Samples/` | complete scripts: `v1.2/` (two scripts that pass every check), `v1.1/`, and a v1.0 sample |
 | `tests/` | JSON fixtures that must validate (`valid/`) or fail (`invalid/`), see `tests/README.md` |
 | `tools/check_fixtures.py` | checks the fixtures and samples against the schemas and a subset of the validator rules |
-| `prompts/convert-to-iranux-standard.md` | a system prompt for an AI agent that converts any Bash script into a v1.2 Compatible candidate |
+| `prompts/convert-to-iranux-specification.md` | a system prompt for an AI agent that converts any Bash script into a v1.2 Compatible candidate |
 
 ## Checking a script
 
@@ -111,7 +116,7 @@ test aid, not the Validator, and it issues no certification.
 
 ## Converting an existing script
 
-`prompts/convert-to-iranux-standard.md` is a complete system prompt. Given a Bash
+`prompts/convert-to-iranux-specification.md` is a complete system prompt. Given a Bash
 script and optional notes, an AI agent following it returns the converted v1.2 script,
 a change report and a list of questions where the original's intent was unclear. It
 preserves behaviour, marks secrets sensitive, chooses the risk level by the rules of
@@ -119,7 +124,7 @@ the specification and never invents URLs, versions, checksums or certification.
 
 ## Scope
 
-The standard defines metadata, parameters, localized text, the execution contract
+The specification defines metadata, parameters, localized text, the execution contract
 (non-interactive runs, root handling, exit codes, final marker, retries, result line),
 security rules, OS identifiers, risk levels and certification. It does not define the
 SSH implementation, file transfer, output streaming, rollback, workflows or

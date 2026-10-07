@@ -2,7 +2,13 @@
 
 ## Version 1.2 - 2026-10-07
 
-Current version. Specification: `docs/specification/iranux-bash-script-standard-v1.2.md`
+Renamed: the document series is now the **Iranux Script Specification** (formerly
+"Iranux Bash Script Standard"; Persian «مشخصات فنی اسکریپت Iranux»). The v1.0 and v1.1
+documents keep their original titles as historical versions. The `IRANUX_*` block
+names and markers, the `standard` JSON key and the "Iranux Compatible" / "Iranux
+Verified" badges are unchanged.
+
+Current version. Specification: `docs/specification/iranux-script-specification-v1.2.md`
 (self-contained). The field names match the Iranux runner's parser, which already
 accepts schema `1.2`.
 
@@ -24,7 +30,13 @@ Added:
 - a parameter-to-variable transport contract (uppercase environment variable,
   `${NAME:-}`), the resolution order of user value → generated → default → required.
 - an exit-code table (0, 1, 64, 65, 69, 70, 73, 75, 77, 78), retry and idempotency
-  rules, a timeout note.
+  rules, the runners' fixed 10-minute run limit (warning IRX1234 when
+  `estimated_minutes` exceeds it) and the output phrases the runner treats as a
+  failure (IRX1236).
+- warnings for an unanchored `validation.pattern` (IRX1235; the runner searches the
+  value, it does not match it whole) and a "runner status" note in §9: the web runner
+  does not yet read the `IRANUX_RESULT` line, and a `show_generated` entry whose
+  value the user typed is refused today.
 - operating-system identifiers defined as `/etc/os-release` `ID` values, with a table;
   an empty `supported_os` means any Linux (as the runner already treated it).
 - an explicit decision rule for `risk.level` and a pattern table for the Validator.
@@ -40,7 +52,7 @@ Added:
   generated password and port, sensitive parameter, result) and
   `Samples/v1.2/show-system-summary.sh` (safe, any Linux, result).
 - 15 valid and 40 invalid fixtures under `tests/`, and `tools/check_fixtures.py`.
-- `prompts/convert-to-iranux-standard.md`: a system prompt for converting any Bash
+- `prompts/convert-to-iranux-specification.md`: a system prompt for converting any Bash
   script into a v1.2 Compatible candidate.
 
 Corrected (the v1.1 text disagreed with the Iranux runner or with itself; the runner

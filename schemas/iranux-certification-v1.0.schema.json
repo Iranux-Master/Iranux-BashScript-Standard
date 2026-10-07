@@ -32,7 +32,7 @@
     "signature": {
       "type": "string",
       "pattern": "^[0-9a-f]+$",
-      "minLength": 512
+      "minLength": 768
     },
     "signature_key_id": {
       "type": "string",

@@ -4,8 +4,10 @@
 Validates every JSON fixture under tests/ against the schema its file name selects,
 and every sample script under Samples/v1.2/ against the v1.2 schemas plus the subset
 of validator rules listed in docs/validator/validator-rules-v1.2.md section "Fixture
-checker". It mirrors the Iranux runner's block regular expressions so that what
-passes here parses in the Iranux applications.
+checker". It uses the Iranux runner's block regular expressions and JSON strictness (including
+the runner's refusal of decimal numbers in integer fields), so a script that passes
+here is parsed by the Iranux applications; the checker does not reproduce the runner's
+per-value validation at run time.
 
 This is a test aid for the repository. It is not the Iranux Validator and issues no
 certification.
@@ -54,6 +56,7 @@ class Report:
     def __init__(self) -> None:
         self.errors: list[str] = []
         self.warnings: list[str] = []
+        self.infos: list[str] = []
         self.passed = 0
 
     def error(self, where: str, code: str, message: str) -> None:
@@ -61,6 +64,11 @@ class Report:
 
     def warn(self, where: str, code: str, message: str) -> None:
         self.warnings.append(f"{code} WARN  {where}: {message}")
+
+    def info(self, where: str, code: str, message: str) -> None:
+        line = f"{code} INFO  {where}: {message}"
+        if line not in self.infos:
+            self.infos.append(line)
 
 
 def load_schema(name: str) -> Draft202012Validator:
@@ -87,8 +95,30 @@ def schema_for_fixture(path: Path) -> str | None:
     return None
 
 
+class DecimalNumber(float):
+    """A JSON number written with a fraction or exponent. The runner (System.Text.Json)
+    refuses such a token for an integer field, which makes the whole block unparseable."""
+
+
+INTEGER_FIELDS = {"estimated_minutes", "min_length", "max_length"}
+
+
+def decimal_integer_fields(node, path: str = "") -> list[str]:
+    found: list[str] = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            child = f"{path}.{key}" if path else key
+            if key in INTEGER_FIELDS and isinstance(value, DecimalNumber):
+                found.append(child)
+            found.extend(decimal_integer_fields(value, child))
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            found.extend(decimal_integer_fields(value, f"{path}[{index}]"))
+    return found
+
+
 def strict_json(text: str):
-    """Strict JSON: no NaN/Infinity, duplicate keys raise ValueError."""
+    """Strict JSON: no NaN/Infinity, duplicate keys raise ValueError, decimal numbers marked."""
 
     def pairs(items):
         result = {}
@@ -101,7 +131,7 @@ def strict_json(text: str):
     def constant(name):
         raise ValueError(f"non-standard constant {name}")
 
-    return json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
+    return json.loads(text, object_pairs_hook=pairs, parse_constant=constant, parse_float=DecimalNumber)
 
 
 def schema_errors(validator: Draft202012Validator, instance) -> list[str]:
@@ -126,6 +156,7 @@ def check_fixture(path: Path, validators: dict[str, Draft202012Validator], repor
         report.error(where, "IRX1014", f"not strict JSON: {exc}")
         return
     errors = schema_errors(validators[schema_name], instance)
+    errors += [f"{field}: decimal number in an integer field (the runner cannot parse it)" for field in decimal_integer_fields(instance)]
     expect_invalid = path.parent.name == "invalid"
     if expect_invalid and not errors:
         report.error(where, "FIXTURE", f"expected to fail {schema_name} but validated")
@@ -204,6 +235,32 @@ def strip_quoted(code: str) -> str:
     return re.sub(r"'[^']*'|\"(?:\\.|[^\"\\])*\"", "''", code)
 
 
+def check_result_line(where: str, number: int, code: str, validators: dict[str, Draft202012Validator],
+                      profile: str | None, report: Report) -> None:
+    """Validates an echo of IRANUX_RESULT whose JSON is literal apart from shell expansions.
+    Expansions are replaced by placeholder strings before parsing."""
+    match = re.search(r'echo\s+(-e\s+)?"IRANUX_RESULT\s+(.*)"\s*$', code)
+    if not match:
+        report.warn(where, "IRX1802", f"line {number}: IRANUX_RESULT is not printed by a single echo with a double-quoted argument; not checked")
+        return
+    text = match.group(2)
+    # Expansions become a placeholder that satisfies both the text and the url patterns.
+    text = re.sub(r"\$\((?:[^()]|\([^()]*\))*\)", '"https://x"', text)   # $(...) in value position
+    text = re.sub(r"\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*", "https://x", text)
+    text = text.replace('\\"', '"')
+    try:
+        result = strict_json(text)
+    except ValueError as exc:
+        report.warn(where, "IRX1802", f"line {number}: IRANUX_RESULT JSON could not be checked statically ({exc})")
+        return
+    for message in schema_errors(validators["iranux-result-v1.2.schema.json"], result):
+        report.error(where, "RESULT", f"line {number}: IRANUX_RESULT {message}")
+    if profile == "catalog":
+        for output in result.get("outputs") or []:
+            if not (((output.get("i18n") or {}).get("fa")) or {}).get("label"):
+                report.error(where, "IRX1904", f"line {number}: result output '{output.get('key')}' has no Persian label")
+
+
 def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_names: set[str] | None,
                  profile: str | None, report: Report) -> None:
     where = display(path)
@@ -250,9 +307,16 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
         return
     for message in schema_errors(validators[metadata_schema], metadata):
         report.error(where, "SCHEMA", f"metadata: {message}")
+    for field in decimal_integer_fields(metadata):
+        report.error(where, "IRX1014", f"metadata {field} is a decimal number; the runner cannot parse the block")
+    minutes = (metadata.get("script") or {}).get("estimated_minutes")
+    if isinstance(minutes, int) and minutes > 10:
+        report.warn(where, "IRX1234", f"estimated_minutes {minutes} exceeds the runners' 10-minute run limit")
 
     icon = ((metadata.get("ui") or {}).get("icon") or {}).get("name")
-    if mdi_names is not None and icon and icon not in mdi_names:
+    if mdi_names is None:
+        report.info(where, "IRX1107", "skipped: no --mdi name list given")
+    elif icon and icon not in mdi_names:
         report.error(where, "IRX1107", f"icon '{icon}' is not in the supplied MDI name list")
 
     params: list[dict] = []
@@ -266,6 +330,11 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
             continue
         for message in schema_errors(validators[param_schema], param):
             report.error(where, "SCHEMA", f"param '{param.get('name', '?')}' (line {line}): {message}")
+        for field in decimal_integer_fields(param):
+            report.error(where, "IRX1014", f"param '{param.get('name', '?')}' {field} is a decimal number; the runner skips the block")
+        pattern = (param.get("validation") or {}).get("pattern")
+        if isinstance(pattern, str) and not (pattern.startswith("^") and pattern.endswith("$")):
+            report.warn(where, "IRX1235", f"param '{param.get('name', '?')}' validation.pattern is not anchored with ^ and $")
         name = param.get("name")
         if isinstance(name, str):
             if name in names:
@@ -334,6 +403,9 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
                 for var in sensitive_vars:
                     if re.search(rf"\$\{{?{var}\b", code):
                         report.error(where, "IRX1803", f"line {number}: sensitive value ${var} inside IRANUX_RESULT")
+                check_result_line(where, number, code, validators, profile, report)
+            if re.search(r"command not found|syntax error|bad interpreter", code, re.I):
+                report.warn(where, "IRX1236", f"line {number}: output text matches a phrase the runner treats as a critical error")
         elif MARKER in code:
             report.error(where, "IRX1233", f"line {number}: the final marker appears outside an echo")
         if re.search(r"\bset\s+-[a-zA-Z]*x|\bset\s+-o\s+xtrace", code):
@@ -415,6 +487,8 @@ def main() -> int:
         else:
             check_sample(path, validators, mdi_names, args.profile, report)
 
+    for line in report.infos:
+        print(line)
     for line in report.warnings:
         print(line)
     for line in report.errors:

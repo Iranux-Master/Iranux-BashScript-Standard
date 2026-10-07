@@ -23,6 +23,9 @@ python3 tools/check_fixtures.py
 python3 tools/check_fixtures.py --mdi /path/to/mdi-names.txt --profile catalog
 ```
 
+Both commands exit 0 on this repository. Without `--mdi`, the icon check prints
+"IRX1107 skipped" and nothing fails because of it.
+
 `certification-v1.0-illustrative.json` only shows the field shapes. Its hash and
 signature are placeholders; no Iranux signing key exists, and nothing in this
 repository is a trust anchor.

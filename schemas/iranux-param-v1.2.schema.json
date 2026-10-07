@@ -103,7 +103,7 @@
         "properties": { "level": { "const": "advanced" }, "required": { "const": true } },
         "required": ["level", "required"]
       },
-      "then": { "anyOf": [ { "required": ["default"] }, { "required": ["generate"] } ] }
+      "then": { "anyOf": [ { "required": ["default"], "properties": { "default": { "anyOf": [ { "type": "string", "pattern": "\\S" }, { "type": "number" }, { "type": "boolean" }, { "type": "array", "minItems": 1 } ] } } }, { "required": ["generate"] } ] }
     },
     {
       "if": { "properties": { "type": { "const": "bool" } }, "required": ["type"] },
@@ -147,13 +147,13 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 80,
-      "pattern": "^[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
     },
     "text": {
       "type": "string",
       "minLength": 1,
       "maxLength": 500,
-      "pattern": "^[^\\u0000-\\u0008\\u000A-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
     }
   }
 }

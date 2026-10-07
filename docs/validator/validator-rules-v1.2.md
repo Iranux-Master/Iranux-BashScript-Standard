@@ -26,7 +26,7 @@ only. See specification §0.2.
 8. apply the cross-block rules (IRX12xx);
 9. apply the UI and icon rules (IRX1101–IRX1110);
 10. apply the localization rules (IRX14xx);
-11. apply the execution-contract rules on the Bash text (IRX1220–IRX1233, IRX17xx);
+11. apply the execution-contract rules on the Bash text (IRX1220–IRX1236, IRX17xx);
 12. apply the security rules (IRX16xx) and the risk check (IRX15xx);
 13. apply the result rules on `IRANUX_RESULT` lines found in the file (IRX18xx);
 14. with `--profile catalog`, apply IRX19xx and the collection rules;
@@ -99,13 +99,16 @@ message is reported with the schema path.
 | IRX1224 | W | `apt-get install` / `apt install` without `-y`; `dnf`/`yum install` without `-y`; `pacman -S` without `--noconfirm`; `zypper install` without `-n`/`--non-interactive`/`-y` | Line `<n>`: package command may prompt; add the non-interactive flag. |
 | IRX1225 | W | `clear` or `tput` as a command | Line `<n>`: `clear`/`tput` has no effect in the web log; remove it. |
 | IRX1226 | W | `sudo` without `-n` | Line `<n>`: sudo without -n may prompt for a password. |
-| IRX1227 | W | a literal `exit <n>` with `<n>` not in {0, 1, 64, 65, 69, 70, 73, 75, 77, 78} and below 126 | Line `<n>`: exit code `<n>` is outside the standard table. |
+| IRX1227 | W | a literal `exit <n>` with `<n>` not in {0, 1, 64, 65, 69, 70, 73, 75, 77, 78} and below 126 | Line `<n>`: exit code `<n>` is outside the exit-code table. |
 | IRX1228 | V | a literal `exit <n>` with `<n>` in {126, 127} or ≥ 128 | Line `<n>`: exit code `<n>` is reserved by Bash. |
 | IRX1229 | W | a `supported_os` item outside the table of specification §11.1 | OS identifier `<id>` is not a known /etc/os-release ID. |
 | IRX1230 | W | a `case` on an OS-id variable (`$ID`, `$release`, `$OS_ID`, `$os`) whose `*)` branch runs a package manager | Line `<n>`: unsupported systems fall through to a package manager; exit 78 instead. |
 | IRX1231 | V | an `echo`/`printf` line that contains `__IRANUX_REACHED_END_V1__` and any other non-whitespace text inside the quoted argument | Line `<n>`: the final marker must be alone on its line. |
 | IRX1232 | W | a marker `echo` followed within three lines by `exit <n>` with `<n>` ≠ 0 | Line `<n>`: the final marker is printed on a failure path. |
 | IRX1233 | V | `__IRANUX_REACHED_END_V1__` occurs outside an `echo`/`printf` statement (comment, string, heredoc) | Line `<n>`: the final marker may only be printed by echo. |
+| IRX1234 | W | `script.estimated_minutes` > 10 (both Iranux runners abort a run after 10 minutes, specification §8.6.4) | estimated_minutes `<n>` exceeds the runners' 10-minute limit. |
+| IRX1235 | W | a `validation.pattern` that does not start with `^` and end with `$` (the runner searches, it does not match the whole value) | Parameter `<name>`: anchor validation.pattern with ^ and $. |
+| IRX1236 | W | script text (outside comments) that prints `command not found`, `syntax error` or `bad interpreter` (the runner turns exit 0 into a failure when they appear in the output) | Line `<n>`: this phrase makes the runner report a failure. |
 
 ### UI and icon (IRX11xx, kept from v1.1)
 
@@ -205,7 +208,7 @@ When the JSON is a literal (no `$` expansions inside the braces other than insid
 
 | Id | Level | Check | Message |
 |---|---|---|---|
-| IRX1801 | W | an output `key` fails `^[a-z][a-z0-9_]*$` | Result key `<key>` should be snake_case. |
+| IRX1801 | V | an output `key` fails `^[a-z][a-z0-9_]*$` | Result key `<key>` must be snake_case. |
 | IRX1802 | W | more than one `IRANUX_RESULT` echo in the file (the last before the marker wins at run time) | `<n>` IRANUX_RESULT lines; print one, immediately before the marker. |
 | IRX1803 | V | a sensitive variable appears in an `IRANUX_RESULT` line | Line `<n>`: sensitive value `<VAR>` in IRANUX_RESULT; use show_generated or a root-only file. |
 
@@ -239,8 +242,14 @@ When the JSON is a literal (no `$` expansions inside the braces other than insid
 ## Fixture checker
 
 `tools/check_fixtures.py` in this repository implements: schema validation of every
-fixture and of the blocks in every sample; block extraction with the runner's
-regular expressions; IRX1012, IRX1013, IRX1014, IRX1017, IRX1211, IRX1301, IRX1303,
-IRX1305, IRX1403, IRX1601, IRX1602 (parameter variables only), IRX1603, IRX1611,
-IRX1231, the marker presence check, and IRX1107 when an MDI name list is supplied.
-It is a test aid for this repository, not the Validator.
+fixture, of the blocks in every sample and of every literal `IRANUX_RESULT` echo in a
+sample (shell expansions replaced by placeholders); block extraction with the runner's
+regular expressions; the runner's JSON strictness (duplicate keys, constants, decimal
+numbers in integer fields, reported as IRX1014); IRX1012, IRX1013, IRX1014, IRX1107 when
+an MDI name list is supplied (otherwise it prints "IRX1107 skipped"), IRX1211, IRX1231,
+IRX1233, IRX1234, IRX1235, IRX1236, IRX1301, IRX1302, IRX1303, IRX1305, IRX1403, IRX1601,
+IRX1602 (parameter variables only), IRX1603, IRX1611, IRX1802 (non-literal result
+lines are reported as not checkable), IRX1803, the marker presence check, and with
+`--profile catalog` IRX1901, IRX1902, IRX1903, IRX1904, IRX1905 and IRX1906. It also
+runs `bash -n` and `shellcheck` on scripts. It is a test aid for this repository, not
+the Validator.

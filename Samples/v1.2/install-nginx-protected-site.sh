@@ -2,9 +2,9 @@
 # Iranux v1.2 sample: installs Nginx, serves a site for a domain and protects the
 # server status page with a username and a generated password.
 #
-# Demonstrates: i18n (Persian), basic and advanced parameters, a generated password,
-# a generated port, a sensitive parameter that is never printed, exit codes,
-# OS detection, idempotent configuration and the IRANUX_RESULT line.
+# Demonstrates: i18n (Persian), basic and advanced parameters, a generated port, a
+# sensitive parameter that is never printed, exit codes, OS detection, idempotent
+# configuration and the IRANUX_RESULT line.
 
 : <<'IRANUX_METADATA'
 {
@@ -96,15 +96,14 @@ IRANUX_PARAM
 {
   "name": "admin_password",
   "label": "Status page password",
-  "description": "Leave empty to get a strong password generated for you. It is shown once after the installation.",
+  "description": "The password you will type to open the server status page. It is never shown in the log.",
   "type": "password",
   "required": true,
-  "generate": "password",
   "group": "Status page",
   "i18n": {
     "fa": {
       "label": "رمز صفحه‌ی وضعیت",
-      "description": "خالی بگذارید تا یک رمز قوی برای شما ساخته شود. رمز یک بار پس از نصب نمایش داده می‌شود."
+      "description": "رمزی که برای باز کردن صفحه‌ی وضعیت سرور وارد می‌کنید. این رمز هیچ‌جا در گزارش نمایش داده نمی‌شود."
     }
   }
 }
@@ -185,9 +184,9 @@ SITE_DOMAIN="${SITE_DOMAIN,,}"
 [[ "$ADMIN_USERNAME" =~ ^[a-z][a-z0-9_-]{2,31}$ ]] \
   || fail 64 "Username must be 3 to 32 lowercase letters, digits, '_' or '-'."
 
-# The Iranux web app generates the password and the port when they are left empty.
-# Other runners may not, so say clearly what is missing.
 [[ -n "$ADMIN_PASSWORD" ]] || fail 64 "Status page password is required."
+# The Iranux web app generates the port when it is left empty. Other runners may not,
+# so say clearly what is missing.
 [[ "$STATUS_PORT" =~ ^[0-9]{1,5}$ && "$STATUS_PORT" -ge 1 && "$STATUS_PORT" -le 65535 ]] \
   || fail 64 "Status page port must be a number between 1 and 65535."
 [[ "$STATUS_PORT" -ne 80 ]] || fail 64 "Status page port must not be 80; the site uses it."
@@ -274,14 +273,17 @@ systemctl enable --now nginx
 systemctl reload nginx
 
 # --- Result ------------------------------------------------------------------
+# The generated port is visible in the status URL, so no show_generated list is
+# needed. (A show_generated entry whose value the user typed makes the current web
+# runner refuse the whole result; see the specification, section 9.3.5.)
 
 SITE_URL="http://${SITE_DOMAIN}/"
 STATUS_URL="http://${SITE_DOMAIN}:${STATUS_PORT}/status"
 
 echo "== Done"
 echo "Site: ${SITE_URL}"
-echo "Status page: ${STATUS_URL} (user ${ADMIN_USERNAME}; the password is shown by Iranux)"
+echo "Status page: ${STATUS_URL} (user ${ADMIN_USERNAME}; the password is the one you entered)"
 
-echo "IRANUX_RESULT {\"outputs\":[{\"key\":\"site_url\",\"label\":\"Site address\",\"value\":$(iranux_json_string "$SITE_URL"),\"type\":\"url\",\"i18n\":{\"fa\":{\"label\":\"آدرس سایت\"}}},{\"key\":\"status_url\",\"label\":\"Status page\",\"value\":$(iranux_json_string "$STATUS_URL"),\"type\":\"url\",\"i18n\":{\"fa\":{\"label\":\"صفحه‌ی وضعیت\"}}},{\"key\":\"admin_username\",\"label\":\"Username\",\"value\":$(iranux_json_string "$ADMIN_USERNAME"),\"type\":\"copy\",\"i18n\":{\"fa\":{\"label\":\"نام کاربری\"}}}],\"show_generated\":[\"admin_password\"]}"
+echo "IRANUX_RESULT {\"outputs\":[{\"key\":\"site_url\",\"label\":\"Site address\",\"value\":$(iranux_json_string "$SITE_URL"),\"type\":\"url\",\"i18n\":{\"fa\":{\"label\":\"آدرس سایت\"}}},{\"key\":\"status_url\",\"label\":\"Status page\",\"value\":$(iranux_json_string "$STATUS_URL"),\"type\":\"url\",\"i18n\":{\"fa\":{\"label\":\"صفحه‌ی وضعیت\"}}},{\"key\":\"admin_username\",\"label\":\"Username\",\"value\":$(iranux_json_string "$ADMIN_USERNAME"),\"type\":\"copy\",\"i18n\":{\"fa\":{\"label\":\"نام کاربری\"}}}]}"
 echo "__IRANUX_REACHED_END_V1__"
 exit 0

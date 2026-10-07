@@ -119,13 +119,13 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 80,
-      "pattern": "^[^\\u0000-\\u0008\\u000A-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
     },
     "description": {
       "type": "string",
       "minLength": 1,
       "maxLength": 500,
-      "pattern": "^[^\\u0000-\\u0008\\u000A-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
     },
     "group": {
       "type": "object",

@@ -1,4 +1,4 @@
-# Iranux Bash Script Standard v1.2 Specification
+# Iranux Script Specification v1.2
 
 Status: current version. Published 2026-10. Supersedes v1.1 as the version new
 scripts should declare. Scripts that declare `1.0` or `1.1` remain valid under their own
@@ -46,7 +46,7 @@ level, check and message.
 
 ## 1. Scope
 
-The standard is a metadata and execution-contract standard for Bash scripts that
+The specification defines the metadata and execution contract for Bash scripts that
 Iranux runs on Linux servers over SSH. It defines:
 
 1. the file format and the embedded JSON blocks;
@@ -59,7 +59,7 @@ Iranux runs on Linux servers over SSH. It defines:
 6. operating-system identifiers and risk levels, with rules for choosing them;
 7. certification: what Iranux Verified means and how it is checked.
 
-The standard does not define the SSH library, the file transfer method, output
+The specification does not define the SSH library, the file transfer method, output
 streaming, rollback, multi-step workflows, dependency graphs or conditional
 parameters. Those belong to the execution layer or to a later version.
 
@@ -162,11 +162,11 @@ reads the parameter **[A]**.
 | 4.3.2 | Keys are lowercase `snake_case` exactly as written in this document. | V `[IRX1015]` (the runner matches keys case-insensitively) |
 | 4.3.3 | No keys other than those defined here. | V `[IRX1016]` (the runner ignores unknown keys) |
 | 4.3.4 | No duplicate keys in one object. | V `[IRX1017]` (the runner keeps the last value) |
-| 4.3.5 | Every string value is NFC-normalised UTF-8 without control characters other than U+0009 and U+000A, and without the characters listed in §3.5. | V `[IRX1018]` |
+| 4.3.5 | Every string value is NFC-normalised UTF-8 without control characters (U+0000–U+001F, including tab and line feed; write a long description as one line) and without the characters listed in §3.5. | V `[IRX1018]` |
 
 Note on 4.3.1: the current runner treats a metadata body that is not valid JSON as
 "no metadata" (the script becomes Plain) and silently skips an `IRANUX_PARAM` body
-that is not valid JSON. The standard treats both as errors `[IRX1014]`; the Validator
+that is not valid JSON. The specification treats both as errors `[IRX1014]`; the Validator
 reports them.
 
 ## 5. Metadata (`IRANUX_METADATA`)
@@ -452,12 +452,12 @@ defined **[V `[IRX1210]` for others]**:
 | `max_length` | integer | text types | value length ≤ |
 | `min_value` | number | numeric types | value ≥ |
 | `max_value` | number | numeric types | value ≤ |
-| `pattern` | string | text types | the whole value matches the regular expression |
+| `pattern` | string | text types | the value matches the regular expression; the runner searches anywhere in the value (`Regex.IsMatch`), so a pattern meant to cover the whole value MUST be anchored with `^` and `$` **[W `[IRX1235]`]** |
 
 `pattern` is evaluated by the runner with .NET regular expressions and a 250 ms time
 limit; a pattern that does not compile or times out refuses the value. Use the common
-subset of .NET and ECMAScript syntax, anchor with `^` and `$`, and avoid nested
-quantifiers **[A]**. Do not repeat a check the type already performs **[W
+subset of .NET and ECMAScript syntax, anchor with `^` and `$` (an unanchored pattern
+accepts any value that contains a match), and avoid nested quantifiers **[A]**. Do not repeat a check the type already performs **[W
 `[IRX1217]`]**.
 
 ### 7.9 `level`
@@ -468,7 +468,7 @@ defaults or generators. Therefore:
 
 | # | Rule | Level |
 |---|---|---|
-| 7.9.1 | An advanced parameter with `required: true` MUST have a `default` or a `generate`. | R |
+| 7.9.1 | An advanced parameter with `required: true` MUST have a non-empty `default` or a `generate`. The runner parses `"default": ""`, but the web runner then treats the value as missing and refuses the run; the schema rejects it. | R (presence), V (non-empty) |
 | 7.9.2 | A parameter a non-expert must decide (domain, email, a choice that changes what gets installed) is basic. A tuning value with a sensible default (port, path, version tag) is advanced. | A |
 | 7.9.3 | At most eight basic parameters per script. | W `[IRX1218]` |
 
@@ -500,7 +500,7 @@ starting the script:
 
 | # | Rule | Level |
 |---|---|---|
-| 7.12.1 | The variable name is the parameter `name` in upper case: `panel_port` → `PANEL_PORT`. The desktop runner additionally exports the lowercase name; scripts MUST read the uppercase one. | normative; V `[IRX1211]` when a declared parameter's uppercase name never appears in the script |
+| 7.12.1 | The variable name is the parameter `name` in upper case: `panel_port` → `PANEL_PORT`. Both runners also export the lowercase name; scripts MUST read the uppercase one. | normative; V `[IRX1211]` when a declared parameter's uppercase name never appears in the script |
 | 7.12.2 | Values are exported with POSIX single-quote escaping (`export NAME='value'` with `'` written as `'\''`), so any character except NUL survives. The runner refuses values that contain NUL or exceed its length limit. | execution layer |
 | 7.12.3 | The script MUST NOT read parameters from positional arguments, `read`, or files written by the user. It MAY accept positional arguments as a fallback for manual use: `TARGET="${TARGET:-${1:-}}"`. | V `[IRX1220]` (prompting), A |
 | 7.12.4 | The script MUST NOT re-export or print sensitive variables (§10.1). | V |
@@ -522,9 +522,9 @@ SITE_DOMAIN="${SITE_DOMAIN:-}"
 
 The runner uploads the file to the server, converts line endings, runs `bash -n`,
 makes it executable and runs it from the login user's home directory with the
-parameter variables exported. The desktop runner uses a pseudo-terminal; the web
-runner captures stdout and stderr. Scripts MUST NOT depend on the current directory,
-on `$0` or on a terminal **[A]**.
+parameter variables exported. Both runners run the script through a pseudo-terminal
+and read one merged stream of stdout and stderr, line by line. Scripts MUST NOT depend
+on the current directory, on `$0` or on a terminal **[A]**.
 
 ### 8.2 Non-interactive
 
@@ -581,10 +581,11 @@ the picture.
 
 | # | Rule | Level |
 |---|---|---|
-| 8.6.1 | The execution layer MAY run the script again after a failed attempt or after an attempt that exited 0 without the marker (the desktop runner retries up to five times). A script MUST therefore be idempotent: a second run with the same inputs on the same server completes without error and without duplicating its effects. | A |
+| 8.6.1 | The execution layer MAY run the script again after an attempt that exited 0 without the final marker (the desktop runner does so up to five attempts; the web runner makes one attempt). A non-zero exit is never retried automatically, but the user can start the script again. A script MUST therefore be idempotent: a second run with the same inputs on the same server completes without error and without duplicating its effects. | A |
 | 8.6.2 | Patterns that break idempotency: appending to a file in `/etc` without first checking the line exists; `mkdir` without `-p`; `useradd` without checking `id`; `mv` into a path that exists; `wget -O` into a path then `tar` that fails when files exist. | W `[IRX1701]`–`[IRX1704]` |
 | 8.6.3 | Scripts write configuration files whole (`cat > file <<EOF`) or edit them in place with an idempotent `sed`, and start services with `systemctl enable --now` or `restart`, which are repeatable. | A |
-| 8.6.4 | The execution layer enforces a timeout. `estimated_minutes` SHOULD be a realistic upper estimate; a script whose work may take longer than ten minutes states so in `estimated_minutes` and in its description. | A |
+| 8.6.4 | Both runners abort a run after **10 minutes** and report it as failed; the limit is fixed and no setting lifts it. A script's work MUST fit in that time on a slow server, or the script splits it (for example, it starts a long task as a `systemd` unit and reports how to check it). `estimated_minutes` is a realistic estimate for the user; a value above 10 is a warning **[W `[IRX1234]`]** because such a script will not finish in the current runners. The range up to 240 is kept for other execution layers. | A, W `[IRX1234]` |
+| 8.6.5 | The runner scans the output for `command not found`, `syntax error` and `bad interpreter`. When one of them appears, an exit code 0 is turned into a failure. Scripts MUST NOT print those phrases in their own messages (for example, say "`curl` is not installed", not "curl: command not found") **[W `[IRX1236]`]**. | normative, W `[IRX1236]` |
 
 ### 8.7 Output
 
@@ -596,8 +597,16 @@ the picture.
 
 ## 9. Structured result (`IRANUX_RESULT`)
 
-The script MAY print one line that the Iranux result page renders. Without it the
-user sees only the log.
+The script MAY print one line with a structured result for the Iranux result page.
+Without it the user sees only the log.
+
+> **Runner status (2026-10).** The Iranux Core parser for this line exists and behaves
+> as this section describes. The web runner, however, prefixes every script output
+> line with `[OUT] ` before it looks for the result, so today it finds no
+> `IRANUX_RESULT` line and the result page shows nothing from it; the desktop runner
+> does not read the line at all. This is an application defect, reported to the app
+> repository. Scripts SHOULD still print the line as specified: it is harmless in the
+> log and is picked up as soon as the runner is corrected.
 
 ### 9.1 Format
 
@@ -625,7 +634,7 @@ to stdout, before the final marker.
 | Field | Type | Rule |
 |---|---|---|
 | `outputs` | array | 0–20 items |
-| `outputs[].key` | string | non-empty, unique within the result; SHOULD match `^[a-z][a-z0-9_]*$` `[W IRX1801]` |
+| `outputs[].key` | string | non-empty, unique within the result; matches `^[a-z][a-z0-9_]*$` (the runner accepts any non-empty key; the schema and `[V IRX1801]` require the pattern) |
 | `outputs[].label` | string | non-empty English label |
 | `outputs[].value` | string | the value as text. Numbers and booleans MUST be written as JSON strings; a non-string makes the whole result invalid |
 | `outputs[].type` | string | optional: `text` (default), `url` (an absolute `http`/`https` URL the page links), `copy` (a value the user will paste, shown with a copy button) |
@@ -640,7 +649,7 @@ to stdout, before the final marker.
 | 9.3.2 | The JSON is strict and matches §9.2. | runner: invalid JSON or a broken rule is reported and no result is shown; the run can still succeed |
 | 9.3.3 | The last `IRANUX_RESULT` line before the final marker wins; lines after the marker are ignored. Print it once, immediately before the marker. | normative; W `[IRX1802]` (more than one `IRANUX_RESULT` in the file) |
 | 9.3.4 | A `url` value is an absolute `http` or `https` URL. | runner |
-| 9.3.5 | Every `show_generated` entry names a parameter with `generate`. | runner |
+| 9.3.5 | Every `show_generated` entry names a parameter with `generate`. Current web runner behaviour: the list is checked against the values the platform generated *in this run*; when the user typed the value instead, the whole result is refused. Until the runner relaxes this (it should ignore such entries), a script whose generated parameter the user may type SHOULD leave the name out of `show_generated` or print the result without it (the Samples do this). | runner |
 | 9.3.6 | Secrets never go in `outputs`: not passwords, tokens, keys, nor the values of sensitive parameters. Generated secrets are shown through `show_generated`. A script that creates a secret itself (not through `generate`) writes it to a root-only file and names the path in a `text` output. | V `[IRX1803]` (a sensitive parameter's variable inside the `IRANUX_RESULT` line) |
 | 9.3.7 | Values are built with proper JSON escaping. Use `jq -nc` when `jq` is a required command, otherwise the helper in Appendix C. | A |
 
@@ -878,7 +887,7 @@ Keys are RSA with a modulus of at least 3072 bits.
 ### 13.6 Trust anchors (to be created by the owner)
 
 - Key ids follow `iranux-YYYY-NN` (year of creation and a sequence number).
-- Public keys are published in the standard repository under `keys/<key-id>.pem`
+- Public keys are published in the specification repository under `keys/<key-id>.pem`
   (PEM `SubjectPublicKeyInfo`) together with their SHA-256 fingerprints in
   `keys/README.md`, and are embedded in Iranux application releases. The private key
   stays offline with the Validator operator; a hardware token is recommended.
