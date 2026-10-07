@@ -1,0 +1,10 @@
+{
+  "name": "allowed_cidr",
+  "label": "Allowed network",
+  "description": "Only addresses in this network can open the page.",
+  "type": "cidr",
+  "required": true,
+  "level": "advanced",
+  "default": "0.0.0.0/0",
+  "example": "203.0.113.0/24"
+}

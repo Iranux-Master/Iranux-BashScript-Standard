@@ -1,0 +1,29 @@
+{
+  "standard": {
+    "name": "iranux-script-metadata",
+    "schema_version": "1.2"
+  },
+  "script": {
+    "id": "show-disk-usage",
+    "name": "Show disk usage",
+    "version": "1.0.0",
+    "description": "Shows disk usage."
+  },
+  "risk": {
+    "level": "medium"
+  },
+  "ui": {
+    "category": {
+      "id": "web",
+      "name": "Web Servers"
+    },
+    "action": {
+      "id": "web-server-management",
+      "name": "Web Server Management"
+    },
+    "icon": {
+      "library": "mdi",
+      "name": "web"
+    }
+  }
+}

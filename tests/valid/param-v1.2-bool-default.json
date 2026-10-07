@@ -1,0 +1,9 @@
+{
+  "name": "include_services",
+  "label": "List failed services",
+  "description": "Also list failed services.",
+  "type": "bool",
+  "required": true,
+  "default": true,
+  "level": "advanced"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "string",
+  "required": false,
+  "i18n": {
+    "fa": {
+      "name": "x"
+    }
+  }
+}

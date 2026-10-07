@@ -1,0 +1,9 @@
+{
+  "outputs": [
+    {
+      "key": "port",
+      "label": "Port",
+      "value": 2053
+    }
+  ]
+}

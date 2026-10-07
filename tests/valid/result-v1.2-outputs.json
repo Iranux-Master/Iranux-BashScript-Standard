@@ -1,0 +1,34 @@
+{
+  "outputs": [
+    {
+      "key": "site_url",
+      "label": "Site address",
+      "value": "https://example.com/",
+      "type": "url",
+      "i18n": {
+        "fa": {
+          "label": "آدرس سایت"
+        }
+      }
+    },
+    {
+      "key": "admin_username",
+      "label": "Username",
+      "value": "admin",
+      "type": "copy",
+      "i18n": {
+        "fa": {
+          "label": "نام کاربری"
+        }
+      }
+    },
+    {
+      "key": "disk_used_percent",
+      "label": "Root disk used",
+      "value": "42%"
+    }
+  ],
+  "show_generated": [
+    "admin_password"
+  ]
+}

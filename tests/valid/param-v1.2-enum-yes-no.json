@@ -1,0 +1,25 @@
+{
+  "name": "enable_firewall",
+  "label": "Enable firewall rules",
+  "description": "Open the web ports in the firewall.",
+  "type": "enum",
+  "required": true,
+  "default": "N",
+  "options": [
+    {
+      "label": "Yes",
+      "value": "Y"
+    },
+    {
+      "label": "No",
+      "value": "N",
+      "description": "Leave the firewall unchanged."
+    }
+  ],
+  "i18n": {
+    "fa": {
+      "label": "فعال کردن فایروال",
+      "description": "پورت‌های وب را در فایروال باز کند."
+    }
+  }
+}

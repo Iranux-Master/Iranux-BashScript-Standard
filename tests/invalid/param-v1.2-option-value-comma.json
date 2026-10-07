@@ -1,0 +1,13 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "multi_select",
+  "required": false,
+  "options": [
+    {
+      "label": "A",
+      "value": "a,b"
+    }
+  ]
+}

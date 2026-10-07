@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iranux.org/schemas/iranux-metadata-v1.2.schema.json",
+  "title": "Iranux Bash Script Metadata v1.2",
+  "description": "The IRANUX_METADATA block of a script declaring schema_version 1.2. Field names match the Iranux runner (IranuxScriptParser) exactly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["standard", "script", "risk", "ui"],
+  "properties": {
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema_version"],
+      "properties": {
+        "name": { "const": "iranux-script-metadata" },
+        "schema_version": { "const": "1.2" }
+      }
+    },
+    "script": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "description"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "minLength": 3,
+          "maxLength": 64
+        },
+        "name": { "$ref": "#/$defs/label" },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$"
+        },
+        "description": { "$ref": "#/$defs/description" },
+        "estimated_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 240
+        },
+        "i18n": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z]{2,3}(-[A-Z]{2})?$": {
+              "type": "object",
+              "additionalProperties": false,
+              "anyOf": [
+                { "required": ["name"] },
+                { "required": ["description"] }
+              ],
+              "properties": {
+                "name": { "$ref": "#/$defs/label" },
+                "description": { "$ref": "#/$defs/description" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level"],
+      "properties": {
+        "level": { "enum": ["safe", "low", "medium", "high", "dangerous"] }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requires_root": { "type": "boolean", "default": false },
+        "requires_internet": { "type": "boolean", "default": false },
+        "supported_os": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        },
+        "required_commands": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.+-]+$"
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "action", "icon"],
+      "properties": {
+        "category": { "$ref": "#/$defs/group" },
+        "action": { "$ref": "#/$defs/group" },
+        "icon": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["library", "name"],
+          "properties": {
+            "library": { "const": "mdi" },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^(?=.*\\S)[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": { "$ref": "#/$defs/label" }
+      }
+    }
+  }
+}
