@@ -1,5 +1,77 @@
 # Changelog
 
+## Version 1.2 - 2026-10-07
+
+Current version. Specification: `docs/specification/iranux-bash-script-standard-v1.2.md`
+(self-contained). The field names match the Iranux runner's parser, which already
+accepts schema `1.2`.
+
+Added:
+
+- `script.i18n` and parameter `i18n` (keys `fa`, `en`, `fa-IR`...): localized name,
+  description, label, placeholder; fallback exact tag → base language → English;
+  Persian text rules for non-expert users (§6).
+- `script.estimated_minutes` (1–240).
+- parameter `level` (`basic` default, `advanced`): an advanced required parameter needs
+  a `default` or a `generate`.
+- parameter `generate` (`password`, `port`, `uuid`) with the allowed types and the exact
+  values the platform produces.
+- the structured result line `IRANUX_RESULT {json}` printed before the final marker:
+  up to 20 outputs (`key`, `label`, `value`, `type` text/url/copy, `i18n`), and
+  `show_generated`; 16 KB limit; secrets never in outputs.
+- an enforcement level on every rule (R runner, V validator, W warning, A author) and a
+  rule identifier for each, in `docs/validator/validator-rules-v1.2.md`.
+- a parameter-to-variable transport contract (uppercase environment variable,
+  `${NAME:-}`), the resolution order of user value → generated → default → required.
+- an exit-code table (0, 1, 64, 65, 69, 70, 73, 75, 77, 78), retry and idempotency
+  rules, a timeout note.
+- operating-system identifiers defined as `/etc/os-release` `ID` values, with a table;
+  an empty `supported_os` means any Linux (as the runner already treated it).
+- an explicit decision rule for `risk.level` and a pattern table for the Validator.
+- security rules: sensitive values never printed, passed on command lines or written
+  without 0600; quoting; no `eval`/`bash -c` with parameters; HTTPS only; no
+  `curl | bash` without review; `set -x` forbidden; mktemp.
+- file rules: UTF-8 without BOM, LF, Bash shebang, no bidirectional control characters.
+- the Catalog profile (§16) for script collections such as Just-Bash: Persian text,
+  `estimated_minutes` and `supported_os` required.
+- JSON Schemas: `iranux-metadata-v1.2`, `iranux-param-v1.2`, `iranux-result-v1.2`,
+  `iranux-certification-v1.0`.
+- samples `Samples/v1.2/install-nginx-protected-site.sh` (i18n, basic/advanced,
+  generated password and port, sensitive parameter, result) and
+  `Samples/v1.2/show-system-summary.sh` (safe, any Linux, result).
+- 15 valid and 40 invalid fixtures under `tests/`, and `tools/check_fixtures.py`.
+- `prompts/convert-to-iranux-standard.md`: a system prompt for converting any Bash
+  script into a v1.2 Compatible candidate.
+
+Corrected (the v1.1 text disagreed with the Iranux runner or with itself; the runner
+is normative):
+
+- the `IRANUX_CERTIFICATION` block has seven fields (`validator_version`,
+  `schema_version` = `1.0`, `timestamp`, `script_hash`, `hash_algorithm`,
+  `signature`, `signature_key_id`); the three-field example in v1.1 never verified.
+- the certifiable content, SHA-256 hash, canonical signed string and
+  RSASSA-PKCS1-v1_5/SHA-256 signature are defined; key ids are `iranux-YYYY-NN`; the
+  trust-anchor mechanism is described without creating a key.
+- option `value` is a non-empty scalar without commas (the `multi_select` separator);
+  options may carry `description`.
+- `validation` has five defined keys; others are ignored by the runner and refused by
+  the Validator.
+- `supported_os` no longer requires at least one item.
+- the final marker is alone on its line; the runner's static check is the regular
+  expression `echo\s+['"]?__IRANUX_REACHED_END_V1__['"]?`, and the web runner stops
+  reading the result at the first output line equal to the marker.
+- `firewall` is not a Material Design Icons name (the v1.1 icon guide recommends it);
+  `wall-fire` and `security-network` exist.
+- README paths `samples/v1.1/` and `tests/invalid/` now match the repository.
+
+Compatibility:
+
+- v1.0 and v1.1 documents stay valid under their own rules; the runner never injects
+  v1.2 fields into them.
+- v1.2 fields in a `1.0`/`1.1` document are tolerated by the runner and refused by the
+  Validator; use them only with `"schema_version": "1.2"`.
+- the marker stays `__IRANUX_REACHED_END_V1__`; the certification schema stays `1.0`.
+
 ## Version 1.1 - 2026-06-16
 
 Added required UI metadata for scripts declaring schema version 1.1:
