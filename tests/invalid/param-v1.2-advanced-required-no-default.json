@@ -1,0 +1,8 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "string",
+  "required": true,
+  "level": "advanced"
+}

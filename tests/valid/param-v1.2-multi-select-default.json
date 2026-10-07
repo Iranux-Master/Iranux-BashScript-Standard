@@ -1,0 +1,25 @@
+{
+  "name": "components",
+  "label": "Components",
+  "description": "Select the components to install.",
+  "type": "multi_select",
+  "required": false,
+  "default": [
+    "nginx",
+    "git"
+  ],
+  "options": [
+    {
+      "label": "Nginx",
+      "value": "nginx"
+    },
+    {
+      "label": "Git",
+      "value": "git"
+    },
+    {
+      "label": "Docker",
+      "value": "docker"
+    }
+  ]
+}

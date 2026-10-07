@@ -1,0 +1,34 @@
+{
+  "standard": {
+    "name": "iranux-script-metadata",
+    "schema_version": "1.2"
+  },
+  "script": {
+    "id": "install-nginx-protected-site",
+    "name": "Nginx with a protected status page",
+    "version": "1.0.0",
+    "description": "Installs Nginx, serves a site for your domain on port 80 and protects the server status page on a separate port with a username and password.",
+    "estimated_minutes": 3,
+    "i18n": {
+      "fa": {
+        "name": "Nginx با صفحه‌ی وضعیت محافظت‌شده",
+        "description": "Nginx را نصب می‌کند و صفحه‌ی وضعیت سرور را با نام کاربری و رمز محافظت می‌کند."
+      }
+    }
+  },
+  "risk": {
+    "level": "medium"
+  },
+  "requirements": {
+    "requires_root": true,
+    "requires_internet": true,
+    "supported_os": [
+      "ubuntu",
+      "debian"
+    ],
+    "required_commands": [
+      "apt-get",
+      "systemctl"
+    ]
+  }
+}

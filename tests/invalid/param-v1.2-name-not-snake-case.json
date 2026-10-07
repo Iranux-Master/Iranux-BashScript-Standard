@@ -1,0 +1,7 @@
+{
+  "name": "Panel-Port",
+  "label": "P",
+  "description": "D",
+  "type": "string",
+  "required": false
+}

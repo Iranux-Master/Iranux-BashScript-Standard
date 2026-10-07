@@ -1,0 +1,12 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "enum",
+  "required": false,
+  "options": [
+    {
+      "value": "1"
+    }
+  ]
+}

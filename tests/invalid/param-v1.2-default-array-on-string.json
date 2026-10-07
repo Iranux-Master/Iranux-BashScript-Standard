@@ -1,0 +1,10 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "string",
+  "required": false,
+  "default": [
+    "a"
+  ]
+}

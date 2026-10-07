@@ -1,0 +1,12 @@
+{
+  "name": "top_processes",
+  "label": "Number of processes to show",
+  "description": "How many of the busiest processes are listed.",
+  "type": "int",
+  "required": true,
+  "default": 5,
+  "validation": {
+    "min_value": 1,
+    "max_value": 20
+  }
+}

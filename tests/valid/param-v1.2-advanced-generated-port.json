@@ -1,0 +1,14 @@
+{
+  "name": "status_port",
+  "label": "Status page port",
+  "description": "The port the status page listens on.",
+  "type": "port",
+  "required": true,
+  "level": "advanced",
+  "generate": "port",
+  "i18n": {
+    "fa": {
+      "label": "پورت صفحه‌ی وضعیت"
+    }
+  }
+}

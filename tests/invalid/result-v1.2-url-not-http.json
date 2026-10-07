@@ -1,0 +1,10 @@
+{
+  "outputs": [
+    {
+      "key": "u",
+      "label": "U",
+      "value": "javascript:alert(1)",
+      "type": "url"
+    }
+  ]
+}

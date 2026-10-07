@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iranux.org/schemas/iranux-result-v1.2.schema.json",
+  "title": "Iranux Structured Result v1.2",
+  "description": "The JSON object a script prints after 'IRANUX_RESULT ' on one line before the final marker. Field names match the Iranux runner (IranuxResultParser) exactly.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "outputs": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "label", "value"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "value": {
+            "type": "string"
+          },
+          "type": {
+            "enum": ["text", "url", "copy"]
+          },
+          "i18n": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "patternProperties": {
+              "^[a-z]{2,3}(-[A-Z]{2})?$": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["label"],
+                "properties": {
+                  "label": { "type": "string", "minLength": 1, "maxLength": 80 }
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "url" } }, "required": ["type"] },
+            "then": { "properties": { "value": { "pattern": "^https?://[^\\s]+$" } } }
+          }
+        ]
+      }
+    },
+    "show_generated": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      }
+    }
+  }
+}

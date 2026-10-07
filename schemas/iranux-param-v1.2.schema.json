@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iranux.org/schemas/iranux-param-v1.2.schema.json",
+  "title": "Iranux Parameter Metadata v1.2",
+  "description": "One IRANUX_PARAM block of a script declaring schema_version 1.2. Field names match the Iranux runner (IranuxParameterDefinition) exactly.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "label", "description", "type", "required"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "maxLength": 64
+    },
+    "label": { "$ref": "#/$defs/label" },
+    "description": { "$ref": "#/$defs/text" },
+    "type": { "$ref": "#/$defs/type" },
+    "required": { "type": "boolean" },
+    "default": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "array", "items": { "oneOf": [ { "type": "string" }, { "type": "number" }, { "type": "boolean" } ] } }
+      ]
+    },
+    "example": {
+      "oneOf": [ { "type": "string" }, { "type": "number" }, { "type": "boolean" } ]
+    },
+    "placeholder": { "type": "string" },
+    "group": { "$ref": "#/$defs/label" },
+    "sensitive": { "type": "boolean" },
+    "options": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "value"],
+        "properties": {
+          "label": { "$ref": "#/$defs/label" },
+          "value": {
+            "oneOf": [
+              { "type": "string", "minLength": 1, "pattern": "^[^,\\r\\n]+$" },
+              { "type": "number" },
+              { "type": "boolean" }
+            ]
+          },
+          "description": { "$ref": "#/$defs/text" }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min_length": { "type": "integer", "minimum": 0 },
+        "max_length": { "type": "integer", "minimum": 1 },
+        "min_value": { "type": "number" },
+        "max_value": { "type": "number" },
+        "pattern": { "type": "string", "minLength": 1 }
+      }
+    },
+    "level": { "enum": ["basic", "advanced"] },
+    "generate": { "enum": ["password", "port", "uuid"] },
+    "i18n": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z]{2,3}(-[A-Z]{2})?$": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "label": { "$ref": "#/$defs/label" },
+            "description": { "$ref": "#/$defs/text" },
+            "placeholder": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "enum": ["enum", "multi_select"] } }, "required": ["type"] },
+      "then": { "required": ["options"] }
+    },
+    {
+      "if": { "properties": { "generate": { "const": "password" } }, "required": ["generate"] },
+      "then": { "properties": { "type": { "enum": ["password", "secret", "string"] } } }
+    },
+    {
+      "if": { "properties": { "generate": { "const": "port" } }, "required": ["generate"] },
+      "then": { "properties": { "type": { "enum": ["port", "int"] } } }
+    },
+    {
+      "if": { "properties": { "generate": { "const": "uuid" } }, "required": ["generate"] },
+      "then": { "properties": { "type": { "enum": ["string", "secret"] } } }
+    },
+    {
+      "if": {
+        "properties": { "level": { "const": "advanced" }, "required": { "const": true } },
+        "required": ["level", "required"]
+      },
+      "then": { "anyOf": [ { "required": ["default"] }, { "required": ["generate"] } ] }
+    },
+    {
+      "if": { "properties": { "type": { "const": "bool" } }, "required": ["type"] },
+      "then": { "properties": { "default": { "type": "boolean" } } }
+    },
+    {
+      "if": { "properties": { "type": { "enum": ["int", "port"] } }, "required": ["type"] },
+      "then": { "properties": { "default": { "oneOf": [ { "type": "integer" }, { "type": "string", "pattern": "^-?[0-9]+$" } ] } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "port" } }, "required": ["type", "default"] },
+      "then": { "properties": { "default": { "oneOf": [ { "type": "integer", "minimum": 1, "maximum": 65535 }, { "type": "string", "pattern": "^[0-9]{1,5}$" } ] } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "float" } }, "required": ["type"] },
+      "then": { "properties": { "default": { "oneOf": [ { "type": "number" }, { "type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$" } ] } } }
+    },
+    {
+      "if": { "properties": { "type": { "const": "multi_select" } }, "required": ["type"] },
+      "then": { "properties": { "default": { "type": "array" } } }
+    },
+    {
+      "if": { "properties": { "type": { "enum": ["password", "secret", "private_key"] } }, "required": ["type"] },
+      "then": { "not": { "required": ["default"] } }
+    },
+    {
+      "if": { "properties": { "type": { "not": { "const": "multi_select" } } }, "required": ["type"] },
+      "then": { "properties": { "default": { "not": { "type": "array" } } } }
+    }
+  ],
+  "$defs": {
+    "type": {
+      "enum": [
+        "string", "multiline", "int", "float", "bool", "enum", "multi_select",
+        "password", "secret", "port", "email", "url", "domain", "hostname",
+        "ip", "ipv4", "ipv6", "cidr", "mac", "path", "date", "time", "datetime",
+        "duration", "size", "cron", "json", "ssh_public_key", "private_key", "certificate"
+      ]
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500,
+      "pattern": "^[^\\u0000-\\u0008\\u000A-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$"
+    }
+  }
+}

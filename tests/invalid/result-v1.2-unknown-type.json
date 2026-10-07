@@ -1,0 +1,10 @@
+{
+  "outputs": [
+    {
+      "key": "a",
+      "label": "A",
+      "value": "1",
+      "type": "secret"
+    }
+  ]
+}

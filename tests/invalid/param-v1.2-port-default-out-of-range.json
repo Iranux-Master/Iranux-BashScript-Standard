@@ -1,0 +1,8 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "port",
+  "required": false,
+  "default": 70000
+}

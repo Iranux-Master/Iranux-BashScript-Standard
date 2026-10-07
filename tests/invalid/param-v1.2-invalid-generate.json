@@ -1,0 +1,8 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "string",
+  "required": false,
+  "generate": "token"
+}

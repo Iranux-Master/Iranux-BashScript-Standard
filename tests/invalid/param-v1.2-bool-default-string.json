@@ -1,0 +1,8 @@
+{
+  "name": "p",
+  "label": "P",
+  "description": "D",
+  "type": "bool",
+  "required": false,
+  "default": "yes"
+}
