@@ -96,8 +96,9 @@ def schema_for_fixture(path: Path) -> str | None:
 
 
 class DecimalNumber(float):
-    """A JSON number written with a fraction or exponent. The runner (System.Text.Json)
-    refuses such a token for an integer field, which makes the whole block unparseable."""
+    """A JSON number written with a fraction or exponent. The runner refuses it for
+    `estimated_minutes` (the whole metadata block then fails to parse) and ignores a
+    `min_length`/`max_length` constraint written that way."""
 
 
 INTEGER_FIELDS = {"estimated_minutes", "min_length", "max_length"}
@@ -331,7 +332,7 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
         for message in schema_errors(validators[param_schema], param):
             report.error(where, "SCHEMA", f"param '{param.get('name', '?')}' (line {line}): {message}")
         for field in decimal_integer_fields(param):
-            report.error(where, "IRX1014", f"param '{param.get('name', '?')}' {field} is a decimal number; the runner skips the block")
+            report.warn(where, "IRX1014", f"param '{param.get('name', '?')}' {field} is a decimal number; the runner ignores that constraint")
         pattern = (param.get("validation") or {}).get("pattern")
         if isinstance(pattern, str) and not (pattern.startswith("^") and pattern.endswith("$")):
             report.warn(where, "IRX1235", f"param '{param.get('name', '?')}' validation.pattern is not anchored with ^ and $")

@@ -1,0 +1,8 @@
+{
+  "name": "motd",
+  "label": "Message",
+  "description": "Shown at login.",
+  "type": "multiline",
+  "required": false,
+  "default": "Welcome\nKeep calm"
+}

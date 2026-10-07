@@ -49,8 +49,8 @@ Added:
 - JSON Schemas: `iranux-metadata-v1.2`, `iranux-param-v1.2`, `iranux-result-v1.2`,
   `iranux-certification-v1.0`.
 - samples `Samples/v1.2/install-nginx-protected-site.sh` (i18n, basic/advanced,
-  generated password and port, sensitive parameter, result) and
-  `Samples/v1.2/show-system-summary.sh` (safe, any Linux, result).
+  generated port, sensitive password parameter, result) and
+  `Samples/v1.2/show-system-summary.sh` (safe, common distributions, result).
 - 15 valid and 40 invalid fixtures under `tests/`, and `tools/check_fixtures.py`.
 - `prompts/convert-to-iranux-specification.md`: a system prompt for converting any Bash
   script into a v1.2 Compatible candidate.

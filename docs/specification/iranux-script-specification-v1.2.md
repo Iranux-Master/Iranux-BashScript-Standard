@@ -162,7 +162,7 @@ reads the parameter **[A]**.
 | 4.3.2 | Keys are lowercase `snake_case` exactly as written in this document. | V `[IRX1015]` (the runner matches keys case-insensitively) |
 | 4.3.3 | No keys other than those defined here. | V `[IRX1016]` (the runner ignores unknown keys) |
 | 4.3.4 | No duplicate keys in one object. | V `[IRX1017]` (the runner keeps the last value) |
-| 4.3.5 | Every string value is NFC-normalised UTF-8 without control characters (U+0000–U+001F, including tab and line feed; write a long description as one line) and without the characters listed in §3.5. | V `[IRX1018]` |
+| 4.3.5 | Every string value is NFC-normalised UTF-8 without control characters (U+0000–U+001F, including tab and line feed; write a long description as one line) and without the characters listed in §3.5. The one exception is the `default` and `example` of a `multiline` parameter, which may contain U+000A line feeds (written `\n` in JSON). | V `[IRX1018]` |
 
 Note on 4.3.1: the current runner treats a metadata body that is not valid JSON as
 "no metadata" (the script becomes Plain) and silently skips an `IRANUX_PARAM` body
@@ -639,7 +639,7 @@ to stdout, before the final marker.
 | `outputs[].value` | string | the value as text. Numbers and booleans MUST be written as JSON strings; a non-string makes the whole result invalid |
 | `outputs[].type` | string | optional: `text` (default), `url` (an absolute `http`/`https` URL the page links), `copy` (a value the user will paste, shown with a copy button) |
 | `outputs[].i18n.{lang}.label` | string | localized label (§6) |
-| `show_generated` | array of strings | names of parameters that have `generate` whose values the result page shows once, from the platform's encrypted copy |
+| `show_generated` | array of strings | names of parameters that have `generate` whose values the result page shows once, from the platform's encrypted copy; see 9.3.5 for the current restriction |
 
 ### 9.3 Rules
 
@@ -875,7 +875,7 @@ Keys are RSA with a modulus of at least 3072 bits.
 
 ### 13.5 Verification by an application
 
-1. Parse the block; if any field of §13.2 is missing, the script is Invalid.
+1. Parse the block. If `validator_version`, `script_hash` or `signature` is empty or missing, or `schema_version` is not `1.0`, the script is Invalid (the R rows of §13.1). A missing `timestamp`, `hash_algorithm` or `signature_key_id` leaves the script Compatible, not Verified.
 2. `schema_version` is `1.0`.
 3. Compute the hash of §13.3 and compare with `script_hash` (case-insensitive).
 4. Look up `signature_key_id` in the application's trusted key list. Unknown key:
@@ -923,7 +923,7 @@ except under the Catalog profile (§16).
 ## 16. Catalog profile
 
 A catalog such as `Iranux-Master/Just-Bash` applies these rules on top of the
-standard. The Validator runs them with `--profile catalog`; each is an error there.
+specification. The Validator runs them with `--profile catalog`; each is an error there.
 
 | # | Rule |
 |---|---|

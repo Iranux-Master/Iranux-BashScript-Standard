@@ -106,6 +106,15 @@
       "then": { "anyOf": [ { "required": ["default"], "properties": { "default": { "anyOf": [ { "type": "string", "pattern": "\\S" }, { "type": "number" }, { "type": "boolean" }, { "type": "array", "minItems": 1 } ] } } }, { "required": ["generate"] } ] }
     },
     {
+      "if": { "not": { "properties": { "type": { "const": "multiline" } }, "required": ["type"] } },
+      "then": {
+        "properties": {
+          "default": { "if": { "type": "string" }, "then": { "pattern": "^[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$" } },
+          "example": { "if": { "type": "string" }, "then": { "pattern": "^[^\\u0000-\\u001F\\u202A-\\u202E\\u2066-\\u2069]*$" } }
+        }
+      }
+    },
+    {
       "if": { "properties": { "type": { "const": "bool" } }, "required": ["type"] },
       "then": { "properties": { "default": { "type": "boolean" } } }
     },

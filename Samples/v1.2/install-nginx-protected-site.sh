@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Iranux v1.2 sample: installs Nginx, serves a site for a domain and protects the
-# server status page with a username and a generated password.
+# server status page with a username and a password the user chooses.
 #
 # Demonstrates: i18n (Persian), basic and advanced parameters, a generated port, a
 # sensitive parameter that is never printed, exit codes, OS detection, idempotent
