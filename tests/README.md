@@ -19,7 +19,8 @@ The rest of the file name says what the fixture shows, for example
 `scripts/` holds small test scripts for the cross-block rules the schemas cannot express
 (the DNS rules of v1.3). Every script in `scripts/valid/` must pass. Every script in
 `scripts/invalid/` is named `<rule id>-<what it shows>.sh` and must be reported with that
-rule and with no other error.
+rule and with no other error. The catalog profile applies to them only when the rule is a
+catalog rule (`IRX19xx`).
 
 Run the checks, which also validate the sample scripts in `Samples/v1.2/` and
 `Samples/v1.3/`:

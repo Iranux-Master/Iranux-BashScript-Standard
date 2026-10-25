@@ -149,7 +149,7 @@ def schema_errors(validator: Draft202012Validator, instance) -> list[str]:
 DNS_FIELD_CODES = {
     "id": "IRX2003", "anchor": "IRX2004", "name": "IRX2006", "value": "IRX2007", "type": "IRX2007",
     "when": "IRX2008", "priority": "IRX2009", "proxy": "IRX2010", "phase": "IRX2011",
-    "purpose": "IRX2013", "i18n": "IRX2013",
+    "purpose": "IRX2013", "i18n": "IRX2013", "exclusive": "IRX2012",
 }
 DNS_TOKEN_PARAM_RE = re.compile(r"(cloudflare|cf|dns|desec|hetzner|digitalocean|bunny|vultr)_?(api_?)?(token|key)", re.I)
 DNS_ANCHOR_TYPES = {"domain", "hostname"}
@@ -158,10 +158,14 @@ DNS_ANCHOR_TYPES = {"domain", "hostname"}
 def dns_schema_code(error) -> str:
     """The IRX20xx identifier of a schema violation inside the dns member (validator-rules-v1.3)."""
     path = list(error.absolute_path)
+    if error.validator == "additionalProperties":
+        return "IRX1016"
     if len(path) < 2 or path[1] != "records":
         return "IRX2002" if path[:1] == ["dns"] else "SCHEMA"
     if len(path) == 2:
         return "IRX2002"
+    if len(path) >= 4 and path[3] == "type" and error.validator == "const" and error.validator_value == "AAAA":
+        return "IRX2008"  # when on a type other than AAAA
     if len(path) >= 4 and path[3] in DNS_FIELD_CODES:
         if path[3] == "value" and "{output." in str(error.instance):
             return "IRX2011"
@@ -182,8 +186,8 @@ def check_dns(where: str, metadata: dict, params: list[dict], text: str, profile
         return
     by_name = {p.get("name"): p for p in params if isinstance(p.get("name"), str)}
     seen_ids: set[str] = set()
-    seen_pairs: dict[tuple[str, str], str] = {}
-    names: dict[str, list[dict]] = {}
+    seen_pairs: dict[tuple[str, str, str], str] = {}
+    names: dict[tuple[str, str], list[dict]] = {}
     for record in records:
         if not isinstance(record, dict):
             continue
@@ -198,11 +202,11 @@ def check_dns(where: str, metadata: dict, params: list[dict], text: str, profile
         elif record.get("optional") is not True and param.get("required") is not True:
             report.error(where, "IRX2005", f"DNS record '{rid}': its anchor '{anchor}' must be required, or the record optional")
         name, rtype = str(record.get("name")), str(record.get("type"))
-        key = (name, rtype)
+        key = (str(anchor), name, rtype)
         if key in seen_pairs:
             report.error(where, "IRX2012", f"DNS records '{seen_pairs[key]}' and '{rid}' collide on {name} {rtype}")
         seen_pairs[key] = rid
-        names.setdefault(name, []).append(record)
+        names.setdefault((str(anchor), name), []).append(record)
         value = record.get("value")
         if record.get("phase") == "after_run" and isinstance(value, str) and value.startswith("{output."):
             output_key = value[len("{output."):-1]
@@ -210,15 +214,37 @@ def check_dns(where: str, metadata: dict, params: list[dict], text: str, profile
                 report.warn(where, "IRX2015", f"DNS record '{rid}': no IRANUX_RESULT line prints output '{output_key}'")
         if profile == "catalog" and not (((record.get("i18n") or {}).get("fa") or {}).get("purpose")):
             report.error(where, "IRX1909", f"DNS record '{rid}' needs i18n.fa.purpose")
-    for name, group in names.items():
+    for (anchor, name), group in names.items():
         exclusive = [r for r in group if r.get("type") in ("CNAME", "NS") or r.get("exclusive") is True]
         if exclusive and len(group) > 1:
             ids = ", ".join(f"'{r.get('id')}'" for r in group)
             report.error(where, "IRX2012", f"DNS records {ids} collide on {name}: {exclusive[0].get('type')} must stand alone")
+    check_delegations(where, [r for r in records if isinstance(r, dict)], report)
     for param in params:
         pname = param.get("name")
         if isinstance(pname, str) and DNS_TOKEN_PARAM_RE.search(pname):
             report.warn(where, "IRX2014", f"parameter '{pname}' asks for a DNS account credential; declare the records in dns instead")
+
+
+def at_or_below(name: str, parent: str) -> bool:
+    """For two under-the-anchor templates: name is parent, or a name below it."""
+    return name == parent or name.endswith("." + parent)
+
+
+def check_delegations(where: str, records: list[dict], report: Report) -> None:
+    """Rule 5.7.2.5 (IRX2016): a delegation is a name under the anchor that holds nothing else, and its target is outside it."""
+    for ns in records:
+        if ns.get("type") != "NS":
+            continue
+        rid, name, value = ns.get("id"), str(ns.get("name")), str(ns.get("value"))
+        if not name.endswith("{anchor}"):
+            report.error(where, "IRX2016", f"DNS record '{rid}': an NS record's name must be under the anchor, not {name}")
+            continue
+        if value.endswith("{anchor}") and at_or_below(value, name):
+            report.error(where, "IRX2016", f"DNS record '{rid}': the delegation's target {value} lies inside the delegated name")
+        for other in records:
+            if other is not ns and other.get("anchor") == ns.get("anchor") and at_or_below(str(other.get("name")), name) and other.get("name") != name:
+                report.error(where, "IRX2016", f"DNS record '{other.get('id')}': {other.get('name')} lies below the delegation '{rid}'")
 
 
 def check_fixture(path: Path, validators: dict[str, Draft202012Validator], report: Report) -> None:
@@ -552,7 +578,8 @@ def check_expected_failure(path: Path, validators: dict[str, Draft202012Validato
         report.error(where, "FIXTURE", "an invalid test script is named <rule id>-<what it shows>.sh")
         return
     inner = Report()
-    check_sample(path, validators, mdi_names, profile, inner)
+    # The catalog profile adds its own errors; only a catalog rule (IRX19xx) is shown under it.
+    check_sample(path, validators, mdi_names, profile if expected.startswith("IRX19") else None, inner)
     codes = {line.split(" ", 1)[0] for line in inner.errors + inner.warnings}
     others = [line for line in inner.errors if not line.startswith(expected + " ")]
     if expected not in codes:

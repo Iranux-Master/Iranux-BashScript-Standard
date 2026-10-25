@@ -360,13 +360,16 @@ The block is metadata: it does not change what the script does, so it does not b
 - each record has `id`, `anchor` (the name of a `domain` or `hostname` parameter that is
   `required: true`), `name`, `type`, `value` and an English `purpose` sentence, plus
   `i18n.fa.purpose`;
-- `name` is `{anchor}`, a fixed label before it (`www.{anchor}`), or a name beside the
-  anchor under its parent (`{anchor.label}-ns.{anchor.parent}`); nothing else;
+- `id` is lower-case kebab-case and never `status`;
+- `name` is `{anchor}`, fixed labels before it (`www.{anchor}`), or exactly one label
+  beside the anchor under its parent (`{anchor.label}-ns.{anchor.parent}`, with fixed
+  text next to `{anchor.label}`); nothing else;
 - `A` takes exactly `{server.ipv4}`; `AAAA` exactly `{server.ipv6}` with
   `"when": "server.ipv6"`; `CNAME`, `NS` and `MX` take a name of the same form; `MX` needs
   `priority`; `TXT` and `CAA` take fixed text; `proxy` is always `off` (leave it out);
+- `when` goes on `AAAA` only; a `CNAME` or `NS` record stands alone on its name;
 - a DNS tunnel needs a glue `A` record beside the anchor and an `NS` record on the anchor
-  that points at it.
+  that points at it; no other record goes on or below the delegated name.
 
 Example for a DNS tunnel whose parameter is `tunnel_domain`:
 

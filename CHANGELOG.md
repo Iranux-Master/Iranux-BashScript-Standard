@@ -17,7 +17,7 @@ Added:
 - the runner's record-set semantics, conflict handling, authoritative wait and clean-up
   as normative runner behaviour.
 - `IRANUX_DNS_STATUS` and `IRANUX_DNS_<ID>` in the script's environment.
-- rules IRX2001–IRX2015 and the run-time rules IRX2021–IRX2023; catalog rule IRX1909.
+- rules IRX2001–IRX2016 and the run-time rules IRX2021–IRX2024; catalog rule IRX1909.
 - `schemas/iranux-metadata-v1.3.schema.json`; the parameter and result schemas stay at
   v1.2.
 - a v1.3 sample (`Samples/v1.3/install-nginx-site-with-dns.sh`), metadata fixtures, and

@@ -233,7 +233,7 @@
     "dnsName": {
       "type": "string",
       "maxLength": 253,
-      "pattern": "^(?:(?:[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9])?\\.)*\\{anchor\\}|(?:[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9])?\\.)*(?:[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9])?|[a-z0-9-]{0,40}\\{anchor\\.label\\}[a-z0-9-]{0,40})\\.\\{anchor\\.parent\\})$"
+      "pattern": "^(?:(?:(?!xn--)[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9])?\\.)*\\{anchor\\}|(?:(?!xn--)[a-z0-9_](?:[a-z0-9_-]{0,61}[a-z0-9])?|[a-z0-9][a-z0-9-]{0,39}\\{anchor\\.label\\}(?:[a-z0-9-]{0,39}[a-z0-9])?|\\{anchor\\.label\\}[a-z0-9-]{0,39}[a-z0-9])\\.\\{anchor\\.parent\\})$"
     },
     "dnsPurpose": {
       "type": "string",
@@ -255,7 +255,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+          "pattern": "^(?!status$)[a-z][a-z0-9-]{0,31}$"
         },
         "anchor": {
           "type": "string",
@@ -477,6 +477,39 @@
               },
               "type": {
                 "const": "TXT"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "when"
+            ]
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "AAAA"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "CNAME",
+                  "NS"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "exclusive": {
+                "const": true
               }
             }
           }
