@@ -1,5 +1,31 @@
 # Changelog
 
+## Version 1.3 - 2026-10-25
+
+Current version. Specification: `docs/specification/iranux-script-specification-v1.3.md`
+(the delta to v1.2; every v1.2 rule still applies). Rules:
+`docs/validator/validator-rules-v1.3.md`. Migration: `docs/migration/v1.2-to-v1.3.md`.
+
+Added:
+
+- the optional `dns` member of `IRANUX_METADATA`: up to ten records (`A`, `AAAA`,
+  `CNAME`, `TXT`, `MX`, `CAA`, `NS`) the runner creates in the user's own DNS. Names are
+  templates under the anchor parameter or beside it under its parent; values are the
+  server's own addresses, names of the same form, or fixed text; the CDN proxy is always
+  off. Records can be created after the run from the script's `IRANUX_RESULT` outputs
+  (`after_run`, for a DKIM key).
+- the runner's record-set semantics, conflict handling, authoritative wait and clean-up
+  as normative runner behaviour.
+- `IRANUX_DNS_STATUS` and `IRANUX_DNS_<ID>` in the script's environment.
+- rules IRX2001–IRX2016 and the run-time rules IRX2021–IRX2024; catalog rule IRX1909.
+- `schemas/iranux-metadata-v1.3.schema.json`; the parameter and result schemas stay at
+  v1.2.
+- a v1.3 sample (`Samples/v1.3/install-nginx-site-with-dns.sh`), metadata fixtures, and
+  test scripts under `tests/scripts/` (valid ones must pass; each invalid one must fail
+  with the rule its file name starts with).
+- the converter prompt declares 1.3 and a `dns` block only for scripts that need DNS
+  records, and never asks for a DNS account token.
+
 ## Version 1.2 - 2026-10-07
 
 Renamed: the document series is now the **Iranux Script Specification** (formerly

@@ -1,0 +1,74 @@
+{
+  "standard": {
+    "name": "iranux-script-metadata",
+    "schema_version": "1.3"
+  },
+  "script": {
+    "id": "install-dns-tunnel-example",
+    "name": "DNS tunnel server (example)",
+    "version": "1.0.0",
+    "description": "Installs a DNS tunnel server that answers on UDP port 53 for a subdomain and replaces the system DNS stub listener.",
+    "estimated_minutes": 4,
+    "i18n": {
+      "fa": {
+        "name": "سرور تونل DNS (نمونه)",
+        "description": "یک سرور تونل DNS نصب می‌کند که برای یک زیردامنه روی پورت UDP ۵۳ پاسخ می‌دهد و شنونده‌ی DNS سیستم را جایگزین می‌کند."
+      }
+    }
+  },
+  "risk": {
+    "level": "dangerous"
+  },
+  "requirements": {
+    "requires_root": true,
+    "requires_internet": true,
+    "supported_os": [
+      "ubuntu",
+      "debian"
+    ]
+  },
+  "ui": {
+    "category": {
+      "id": "vpn",
+      "name": "VPN"
+    },
+    "action": {
+      "id": "dns-tunnel",
+      "name": "DNS Tunnel"
+    },
+    "icon": {
+      "library": "mdi",
+      "name": "dns"
+    }
+  },
+  "dns": {
+    "records": [
+      {
+        "id": "tunnel-glue",
+        "anchor": "tunnel_domain",
+        "name": "{anchor.label}-ns.{anchor.parent}",
+        "type": "A",
+        "value": "{server.ipv4}",
+        "purpose": "The address of this server's DNS listener.",
+        "i18n": {
+          "fa": {
+            "purpose": "نشانی شنونده‌ی DNS این سرور."
+          }
+        }
+      },
+      {
+        "id": "tunnel-ns",
+        "anchor": "tunnel_domain",
+        "name": "{anchor}",
+        "type": "NS",
+        "value": "{anchor.label}-ns.{anchor.parent}",
+        "purpose": "Hands the tunnel subdomain to this server.",
+        "i18n": {
+          "fa": {
+            "purpose": "زیردامنه‌ی تونل را به این سرور می‌سپارد."
+          }
+        }
+      }
+    ]
+  }
+}

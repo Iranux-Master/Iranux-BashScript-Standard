@@ -8,7 +8,7 @@
 **A self-contained metadata and execution-contract specification for Bash scripts that
 Iranux runs on Linux servers.**
 
-> Current version: **1.2** (2026-10). Versions 1.0 and 1.1 remain valid for scripts
+> Current version: **1.3** (2026-10). Versions 1.0, 1.1 and 1.2 remain valid for scripts
 > that declare them.
 
 A script describes itself inside the Bash file, in strict-JSON heredoc blocks. The
@@ -21,12 +21,15 @@ who is not a Linux expert.
 
 | Version | Date | Status | Specification | What it added |
 |---|---|---|---|---|
-| 1.2 | 2026-10 | current | [`docs/specification/iranux-script-specification-v1.2.md`](docs/specification/iranux-script-specification-v1.2.md) | localized text (`i18n`, Persian first), basic/advanced parameters, generated values, the `IRANUX_RESULT` line, `estimated_minutes`; complete rules for certification, exit codes, transport, OS identifiers, risk levels, security |
+| 1.3 | 2026-10 | current | [`docs/specification/iranux-script-specification-v1.3.md`](docs/specification/iranux-script-specification-v1.3.md) (delta to v1.2) | the `dns` block: the DNS records a script needs, created by the runner in the user's own DNS; `IRANUX_DNS_*` variables |
+| 1.2 | 2026-10 | valid | [`docs/specification/iranux-script-specification-v1.2.md`](docs/specification/iranux-script-specification-v1.2.md) | localized text (`i18n`, Persian first), basic/advanced parameters, generated values, the `IRANUX_RESULT` line, `estimated_minutes`; complete rules for certification, exit codes, transport, OS identifiers, risk levels, security |
 | 1.1 | 2026-06-16 | valid | [`docs/specification/iranux-bash-script-standard-v1.1.md`](docs/specification/iranux-bash-script-standard-v1.1.md) | required `ui` object: category, action, Material Design Icon |
 | 1.0 | 2026-05 | valid | the rules the v1.1 specification inherits, and `schemas/iranux-param-v1.0.schema.json` | metadata, parameters, certification concept, final marker |
 
-New scripts declare `1.2`. Migration guides: [`docs/migration/v1.0-to-v1.1.md`](docs/migration/v1.0-to-v1.1.md),
-[`docs/migration/v1.1-to-v1.2.md`](docs/migration/v1.1-to-v1.2.md).
+New scripts declare `1.2`, or `1.3` when they need DNS records. Migration guides:
+[`docs/migration/v1.0-to-v1.1.md`](docs/migration/v1.0-to-v1.1.md),
+[`docs/migration/v1.1-to-v1.2.md`](docs/migration/v1.1-to-v1.2.md),
+[`docs/migration/v1.2-to-v1.3.md`](docs/migration/v1.2-to-v1.3.md).
 
 ## What a v1.2 script looks like
 
@@ -90,13 +93,13 @@ result line tells the user what came out.
 
 | Path | Content |
 |---|---|
-| `docs/specification/` | the specification of each version (v1.2 is self-contained) |
+| `docs/specification/` | the specification of each version (v1.2 is self-contained; v1.3 is the delta to it) |
 | `docs/validator/` | the rule tables the Validator applies, with identifiers and levels |
 | `docs/migration/` | step-by-step migration between versions |
 | `docs/implementation/` | implementation guidance for applications (UI metadata, icon validation) |
-| `schemas/` | JSON Schemas (draft 2020-12): metadata v1.1 and v1.2, parameter v1.0 and v1.2, result v1.2, certification v1.0 |
-| `Samples/` | complete scripts: `v1.2/` (two scripts that pass every check), `v1.1/`, and a v1.0 sample |
-| `tests/` | JSON fixtures that must validate (`valid/`) or fail (`invalid/`), see `tests/README.md` |
+| `schemas/` | JSON Schemas (draft 2020-12): metadata v1.1, v1.2 and v1.3, parameter v1.0 and v1.2, result v1.2, certification v1.0 |
+| `Samples/` | complete scripts: `v1.3/` and `v1.2/` (scripts that pass every check), `v1.1/`, and a v1.0 sample |
+| `tests/` | JSON fixtures that must validate (`valid/`) or fail (`invalid/`), and test scripts (`scripts/`), see `tests/README.md` |
 | `tools/check_fixtures.py` | checks the fixtures and samples against the schemas and a subset of the validator rules |
 | `prompts/convert-to-iranux-specification.md` | a system prompt for an AI agent that converts any Bash script into a v1.2 Compatible candidate |
 
@@ -104,7 +107,7 @@ result line tells the user what came out.
 
 ```bash
 python3 -m pip install jsonschema
-python3 tools/check_fixtures.py                       # fixtures and Samples/v1.2
+python3 tools/check_fixtures.py                       # fixtures, test scripts, Samples/v1.2 and v1.3
 python3 tools/check_fixtures.py my-script.sh          # one script
 python3 tools/check_fixtures.py --profile catalog --mdi mdi-names.txt my-script.sh
 bash -n my-script.sh && shellcheck my-script.sh
@@ -119,6 +122,7 @@ test aid, not the Validator, and it issues no certification.
 `prompts/convert-to-iranux-specification.md` is a complete system prompt. Given a Bash
 script and optional notes, an AI agent following it returns the converted v1.2 script,
 a change report and a list of questions where the original's intent was unclear. It
+declares v1.3 and a `dns` block only for a script that needs DNS records. It
 preserves behaviour, marks secrets sensitive, chooses the risk level by the rules of
 the specification and never invents URLs, versions, checksums or certification.
 
@@ -126,7 +130,8 @@ the specification and never invents URLs, versions, checksums or certification.
 
 The specification defines metadata, parameters, localized text, the execution contract
 (non-interactive runs, root handling, exit codes, final marker, retries, result line),
-security rules, OS identifiers, risk levels and certification. It does not define the
+security rules, OS identifiers, risk levels, certification, and (v1.3) the DNS records a
+script needs. It does not define the
 SSH implementation, file transfer, output streaming, rollback, workflows or
 conditional parameters.
 

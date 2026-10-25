@@ -1,0 +1,93 @@
+{
+  "standard": {
+    "name": "iranux-script-metadata",
+    "schema_version": "1.3"
+  },
+  "script": {
+    "id": "install-nginx-site-with-dns",
+    "name": "Nginx site with automatic DNS",
+    "version": "1.0.0",
+    "description": "Installs Nginx and serves a site for your domain and its www name on port 80. The domain's address records are created for you before the install.",
+    "estimated_minutes": 3,
+    "i18n": {
+      "fa": {
+        "name": "سایت Nginx با DNS خودکار",
+        "description": "Nginx را نصب می‌کند و سایت دامنه‌ی شما و نام www آن را روی پورت ۸۰ راه می‌اندازد. رکوردهای نشانی دامنه پیش از نصب برای شما ساخته می‌شوند."
+      }
+    }
+  },
+  "risk": {
+    "level": "medium"
+  },
+  "requirements": {
+    "requires_root": true,
+    "requires_internet": true,
+    "supported_os": [
+      "ubuntu",
+      "debian"
+    ],
+    "required_commands": [
+      "apt-get",
+      "systemctl"
+    ]
+  },
+  "ui": {
+    "category": {
+      "id": "web",
+      "name": "Web Servers"
+    },
+    "action": {
+      "id": "web-server-management",
+      "name": "Web Server Management"
+    },
+    "icon": {
+      "library": "mdi",
+      "name": "web"
+    }
+  },
+  "dns": {
+    "records": [
+      {
+        "id": "site",
+        "anchor": "site_domain",
+        "name": "{anchor}",
+        "type": "A",
+        "value": "{server.ipv4}",
+        "purpose": "Points your domain at this server.",
+        "i18n": {
+          "fa": {
+            "purpose": "دامنه‌ی شما را به این سرور وصل می‌کند."
+          }
+        }
+      },
+      {
+        "id": "site-v6",
+        "anchor": "site_domain",
+        "name": "{anchor}",
+        "type": "AAAA",
+        "value": "{server.ipv6}",
+        "when": "server.ipv6",
+        "purpose": "Points your domain at this server's IPv6 address.",
+        "i18n": {
+          "fa": {
+            "purpose": "دامنه‌ی شما را به نشانی IPv6 این سرور وصل می‌کند."
+          }
+        }
+      },
+      {
+        "id": "www",
+        "anchor": "site_domain",
+        "name": "www.{anchor}",
+        "type": "CNAME",
+        "value": "{anchor}",
+        "optional": true,
+        "purpose": "Makes the www name open the same site.",
+        "i18n": {
+          "fa": {
+            "purpose": "نام www را هم به همین سایت می‌برد."
+          }
+        }
+      }
+    ]
+  }
+}

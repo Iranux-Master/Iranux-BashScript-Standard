@@ -2,9 +2,11 @@
 """Fixture and sample checker for this repository.
 
 Validates every JSON fixture under tests/ against the schema its file name selects,
-and every sample script under Samples/v1.2/ against the v1.2 schemas plus the subset
-of validator rules listed in docs/validator/validator-rules-v1.2.md section "Fixture
-checker". It uses the Iranux runner's block regular expressions and JSON strictness (including
+and every sample script under Samples/v1.2/ and Samples/v1.3/ against the schemas of
+its version plus the subset of validator rules listed in the "Fixture checker" sections
+of docs/validator/validator-rules-v1.2.md and validator-rules-v1.3.md. Test scripts under
+tests/scripts/valid/ must pass; each one under tests/scripts/invalid/ is named
+<rule id>-<what it shows>.sh and must be reported with that rule and no other error. It uses the Iranux runner's block regular expressions and JSON strictness (including
 the runner's refusal of decimal numbers in integer fields), so a script that passes
 here is parsed by the Iranux applications; the checker does not reproduce the runner's
 per-value validation at run time.
@@ -82,6 +84,8 @@ def schema_for_fixture(path: Path) -> str | None:
     name = path.name
     if name.startswith("v1.1-") or name.startswith("metadata-v1.1"):
         return "iranux-metadata-v1.1.schema.json"
+    if name.startswith("metadata-v1.3"):
+        return "iranux-metadata-v1.3.schema.json"
     if name.startswith("metadata-"):
         return "iranux-metadata-v1.2.schema.json"
     if name.startswith("param-v1.0"):
@@ -140,6 +144,107 @@ def schema_errors(validator: Draft202012Validator, instance) -> list[str]:
         f"{'/'.join(str(p) for p in error.absolute_path) or '<root>'}: {error.message}"
         for error in sorted(validator.iter_errors(instance), key=lambda e: list(e.absolute_path))
     ]
+
+
+DNS_FIELD_CODES = {
+    "id": "IRX2003", "anchor": "IRX2004", "name": "IRX2006", "value": "IRX2007", "type": "IRX2007",
+    "when": "IRX2008", "priority": "IRX2009", "proxy": "IRX2010", "phase": "IRX2011",
+    "purpose": "IRX2013", "i18n": "IRX2013", "exclusive": "IRX2012",
+}
+DNS_TOKEN_PARAM_RE = re.compile(r"(cloudflare|cf|dns|desec|hetzner|digitalocean|bunny|vultr)_?(api_?)?(token|key)", re.I)
+DNS_ANCHOR_TYPES = {"domain", "hostname"}
+
+
+def dns_schema_code(error) -> str:
+    """The IRX20xx identifier of a schema violation inside the dns member (validator-rules-v1.3)."""
+    path = list(error.absolute_path)
+    if error.validator == "additionalProperties":
+        return "IRX1016"
+    if len(path) < 2 or path[1] != "records":
+        return "IRX2002" if path[:1] == ["dns"] else "SCHEMA"
+    if len(path) == 2:
+        return "IRX2002"
+    if len(path) >= 4 and path[3] == "type" and error.validator == "const" and error.validator_value == "AAAA":
+        return "IRX2008"  # when on a type other than AAAA
+    if len(path) >= 4 and path[3] in DNS_FIELD_CODES:
+        if path[3] == "value" and "{output." in str(error.instance):
+            return "IRX2011"
+        return DNS_FIELD_CODES[path[3]]
+    # A failure on the record object itself (a missing field, an if/then branch).
+    message = error.message
+    for field in ("purpose", "when", "priority", "phase", "value", "name", "anchor", "id"):
+        if f"'{field}'" in message:
+            return "IRX2011" if field == "phase" else DNS_FIELD_CODES[field]
+    return "IRX2007"
+
+
+def check_dns(where: str, metadata: dict, params: list[dict], text: str, profile: str | None, report: Report) -> None:
+    """The cross-block DNS rules of specification v1.3 section 5.7 that the schema cannot express."""
+    dns = metadata.get("dns")
+    records = dns.get("records") if isinstance(dns, dict) else None
+    if not isinstance(records, list):
+        return
+    by_name = {p.get("name"): p for p in params if isinstance(p.get("name"), str)}
+    seen_ids: set[str] = set()
+    seen_pairs: dict[tuple[str, str, str], str] = {}
+    names: dict[tuple[str, str], list[dict]] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        rid = str(record.get("id", "?"))
+        if rid in seen_ids:
+            report.error(where, "IRX2003", f"DNS record id '{rid}' is repeated")
+        seen_ids.add(rid)
+        anchor = record.get("anchor")
+        param = by_name.get(anchor)
+        if param is None or param.get("type") not in DNS_ANCHOR_TYPES:
+            report.error(where, "IRX2004", f"DNS record '{rid}': anchor '{anchor}' must be a domain or hostname parameter")
+        elif record.get("optional") is not True and param.get("required") is not True:
+            report.error(where, "IRX2005", f"DNS record '{rid}': its anchor '{anchor}' must be required, or the record optional")
+        name, rtype = str(record.get("name")), str(record.get("type"))
+        key = (str(anchor), name, rtype)
+        if key in seen_pairs:
+            report.error(where, "IRX2012", f"DNS records '{seen_pairs[key]}' and '{rid}' collide on {name} {rtype}")
+        seen_pairs[key] = rid
+        names.setdefault((str(anchor), name), []).append(record)
+        value = record.get("value")
+        if record.get("phase") == "after_run" and isinstance(value, str) and value.startswith("{output."):
+            output_key = value[len("{output."):-1]
+            if not re.search(rf'IRANUX_RESULT .*\\?"key\\?"\s*:\s*\\?"{re.escape(output_key)}\\?"', text):
+                report.warn(where, "IRX2015", f"DNS record '{rid}': no IRANUX_RESULT line prints output '{output_key}'")
+        if profile == "catalog" and not (((record.get("i18n") or {}).get("fa") or {}).get("purpose")):
+            report.error(where, "IRX1909", f"DNS record '{rid}' needs i18n.fa.purpose")
+    for (anchor, name), group in names.items():
+        exclusive = [r for r in group if r.get("type") in ("CNAME", "NS") or r.get("exclusive") is True]
+        if exclusive and len(group) > 1:
+            ids = ", ".join(f"'{r.get('id')}'" for r in group)
+            report.error(where, "IRX2012", f"DNS records {ids} collide on {name}: {exclusive[0].get('type')} must stand alone")
+    check_delegations(where, [r for r in records if isinstance(r, dict)], report)
+    for param in params:
+        pname = param.get("name")
+        if isinstance(pname, str) and DNS_TOKEN_PARAM_RE.search(pname):
+            report.warn(where, "IRX2014", f"parameter '{pname}' asks for a DNS account credential; declare the records in dns instead")
+
+
+def at_or_below(name: str, parent: str) -> bool:
+    """For two under-the-anchor templates: name is parent, or a name below it."""
+    return name == parent or name.endswith("." + parent)
+
+
+def check_delegations(where: str, records: list[dict], report: Report) -> None:
+    """Rule 5.7.2.5 (IRX2016): a delegation is a name under the anchor that holds nothing else, and its target is outside it."""
+    for ns in records:
+        if ns.get("type") != "NS":
+            continue
+        rid, name, value = ns.get("id"), str(ns.get("name")), str(ns.get("value"))
+        if not name.endswith("{anchor}"):
+            report.error(where, "IRX2016", f"DNS record '{rid}': an NS record's name must be under the anchor, not {name}")
+            continue
+        if value.endswith("{anchor}") and at_or_below(value, name):
+            report.error(where, "IRX2016", f"DNS record '{rid}': the delegation's target {value} lies inside the delegated name")
+        for other in records:
+            if other is not ns and other.get("anchor") == ns.get("anchor") and at_or_below(str(other.get("name")), name) and other.get("name") != name:
+                report.error(where, "IRX2016", f"DNS record '{other.get('id')}': {other.get('name')} lies below the delegation '{rid}'")
 
 
 def check_fixture(path: Path, validators: dict[str, Draft202012Validator], report: Report) -> None:
@@ -299,15 +404,23 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
         report.error(where, "IRX1014", f"metadata is not strict JSON: {exc}")
         return
     version = (metadata.get("standard") or {}).get("schema_version")
-    if version == "1.2":
+    if version == "1.3":
+        metadata_schema, param_schema = "iranux-metadata-v1.3.schema.json", "iranux-param-v1.2.schema.json"
+    elif version == "1.2":
         metadata_schema, param_schema = "iranux-metadata-v1.2.schema.json", "iranux-param-v1.2.schema.json"
     elif version == "1.1":
         metadata_schema, param_schema = "iranux-metadata-v1.1.schema.json", "iranux-param-v1.0.schema.json"
     else:
-        report.error(where, "IRX1001", f"schema version {version!r} is not checked by this tool (1.1 and 1.2 only)")
+        report.error(where, "IRX1001", f"schema version {version!r} is not checked by this tool (1.1, 1.2 and 1.3 only)")
         return
-    for message in schema_errors(validators[metadata_schema], metadata):
-        report.error(where, "SCHEMA", f"metadata: {message}")
+    if "dns" in metadata and version != "1.3":
+        report.error(where, "IRX2001", "dns requires schema version 1.3")
+    for error in sorted(validators[metadata_schema].iter_errors(metadata), key=lambda e: list(e.absolute_path)):
+        if version != "1.3" and list(error.absolute_path) == [] and "'dns'" in error.message:
+            continue  # reported as IRX2001
+        code = dns_schema_code(error) if list(error.absolute_path)[:1] == ["dns"] else "SCHEMA"
+        location = "/".join(str(p) for p in error.absolute_path) or "<root>"
+        report.error(where, code, f"metadata: {location}: {error.message}")
     for field in decimal_integer_fields(metadata):
         report.error(where, "IRX1014", f"metadata {field} is a decimal number; the runner cannot parse the block")
     minutes = (metadata.get("script") or {}).get("estimated_minutes")
@@ -342,6 +455,9 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
                 report.error(where, "DUPLICATE", f"duplicate parameter name '{name}'")
             names.add(name)
         params.append(param)
+
+    if version == "1.3":
+        check_dns(where, metadata, params, text, profile, report)
 
     # Persian text quality (IRX1403) over every "fa" value in metadata and params.
     def walk_fa(node, path: str) -> None:
@@ -420,8 +536,8 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
     if profile == "catalog":
         script = metadata.get("script") or {}
         fa = (script.get("i18n") or {}).get("fa") or {}
-        if version != "1.2":
-            report.error(where, "IRX1901", "catalog scripts declare schema 1.2")
+        if version not in ("1.2", "1.3"):
+            report.error(where, "IRX1901", "catalog scripts declare schema 1.2 or 1.3")
         if not fa.get("name") or not fa.get("description"):
             report.error(where, "IRX1902", "script.i18n.fa.name and .description are required")
         for param in params:
@@ -453,9 +569,30 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
         report.passed += 1
 
 
+def check_expected_failure(path: Path, validators: dict[str, Draft202012Validator], mdi_names: set[str] | None,
+                           profile: str | None, report: Report) -> None:
+    """A test script under tests/scripts/invalid/ must be reported with the rule its file name starts with, and no other error."""
+    where = display(path)
+    expected = path.name.split("-", 1)[0]
+    if not re.fullmatch(r"IRX\d{4}", expected):
+        report.error(where, "FIXTURE", "an invalid test script is named <rule id>-<what it shows>.sh")
+        return
+    inner = Report()
+    # The catalog profile adds its own errors; only a catalog rule (IRX19xx) is shown under it.
+    check_sample(path, validators, mdi_names, profile if expected.startswith("IRX19") else None, inner)
+    codes = {line.split(" ", 1)[0] for line in inner.errors + inner.warnings}
+    others = [line for line in inner.errors if not line.startswith(expected + " ")]
+    if expected not in codes:
+        report.error(where, "FIXTURE", f"expected {expected} but got: {'; '.join(inner.errors + inner.warnings) or 'no finding'}")
+    elif others:
+        report.error(where, "FIXTURE", f"expected only {expected}, also got: {'; '.join(others)}")
+    else:
+        report.passed += 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("paths", nargs="*", help="fixtures (.json) or scripts (.sh); default: tests/ and Samples/v1.2/")
+    parser.add_argument("paths", nargs="*", help="fixtures (.json) or scripts (.sh); default: tests/, Samples/v1.2/ and Samples/v1.3/")
     parser.add_argument("--mdi", type=Path, help="text file with one MDI icon name per line, for IRX1107")
     parser.add_argument("--profile", choices=["catalog"], help="also apply the Catalog profile rules to scripts")
     args = parser.parse_args()
@@ -465,6 +602,7 @@ def main() -> int:
         for name in (
             "iranux-metadata-v1.1.schema.json",
             "iranux-metadata-v1.2.schema.json",
+            "iranux-metadata-v1.3.schema.json",
             "iranux-param-v1.0.schema.json",
             "iranux-param-v1.2.schema.json",
             "iranux-result-v1.2.schema.json",
@@ -473,7 +611,7 @@ def main() -> int:
     }
     mdi_names = set(args.mdi.read_text(encoding="utf-8").split()) if args.mdi else None
 
-    paths = [Path(p).resolve() for p in args.paths] or [ROOT / "tests", ROOT / "Samples" / "v1.2"]
+    paths = [Path(p).resolve() for p in args.paths] or [ROOT / "tests", ROOT / "Samples" / "v1.2", ROOT / "Samples" / "v1.3"]
     files: list[Path] = []
     for path in paths:
         if path.is_dir():
@@ -485,6 +623,8 @@ def main() -> int:
     for path in files:
         if path.suffix == ".json":
             check_fixture(path, validators, report)
+        elif path.parent.name == "invalid" and path.parent.parent.name == "scripts":
+            check_expected_failure(path, validators, mdi_names, args.profile, report)
         else:
             check_sample(path, validators, mdi_names, args.profile, report)
 
