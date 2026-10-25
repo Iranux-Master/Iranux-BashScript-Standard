@@ -22,6 +22,10 @@ The rest of the file name says what the fixture shows, for example
 rule and with no other error. The catalog profile applies to them only when the rule is a
 catalog rule (`IRX19xx`).
 
+The checker applies the schemas' `pattern` keywords as JSON Schema defines them
+(ECMA-262), so `$` matches only at the end of the string and a value ending in a newline
+is refused.
+
 Run the checks, which also validate the sample scripts in `Samples/v1.2/` and
 `Samples/v1.3/`:
 
