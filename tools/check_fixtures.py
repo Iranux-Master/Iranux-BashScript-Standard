@@ -73,11 +73,39 @@ class Report:
             self.infos.append(line)
 
 
+def ecma_pattern(pattern: str) -> str:
+    """JSON Schema patterns are ECMA-262, where $ ends the string; in Python $ also matches before a final newline."""
+    out, index, in_class = [], 0, False
+    while index < len(pattern):
+        char = pattern[index]
+        if char == "\\":
+            out.append(pattern[index:index + 2])
+            index += 2
+            continue
+        if in_class:
+            in_class = char != "]"
+        elif char == "[":
+            in_class = True
+        elif char == "$":
+            char = r"\Z"
+        out.append(char)
+        index += 1
+    return "".join(out)
+
+
+def ecma_pattern_keyword(validator, pattern, instance, schema):
+    if validator.is_type(instance, "string") and not re.search(ecma_pattern(pattern), instance):
+        yield jsonschema.ValidationError(f"{instance!r} does not match {pattern!r}")
+
+
+EcmaValidator = jsonschema.validators.extend(Draft202012Validator, {"pattern": ecma_pattern_keyword})
+
+
 def load_schema(name: str) -> Draft202012Validator:
     with (SCHEMAS / name).open(encoding="utf-8") as handle:
         schema = json.load(handle)
     Draft202012Validator.check_schema(schema)
-    return Draft202012Validator(schema)
+    return EcmaValidator(schema)
 
 
 def schema_for_fixture(path: Path) -> str | None:

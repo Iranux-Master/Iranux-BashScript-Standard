@@ -25,6 +25,9 @@ Added:
   with the rule its file name starts with).
 - the converter prompt declares 1.3 and a `dns` block only for scripts that need DNS
   records, and never asks for a DNS account token.
+- `tools/check_fixtures.py` applies schema patterns with ECMA-262 semantics, where `$`
+  ends the string (Python's `$` also matched before a final newline, so `"web\n"` passed
+  as a record id); three test scripts show it.
 
 ## Version 1.2 - 2026-10-07
 
