@@ -118,6 +118,8 @@ def schema_for_fixture(path: Path) -> str | None:
         return "iranux-metadata-v1.2.schema.json"
     if name.startswith("param-v1.0"):
         return "iranux-param-v1.0.schema.json"
+    if name.startswith("param-v1.3"):
+        return "iranux-param-v1.3.schema.json"
     if name.startswith("param-"):
         return "iranux-param-v1.2.schema.json"
     if name.startswith("result-"):
@@ -252,6 +254,32 @@ def check_dns(where: str, metadata: dict, params: list[dict], text: str, profile
         pname = param.get("name")
         if isinstance(pname, str) and DNS_TOKEN_PARAM_RE.search(pname):
             report.warn(where, "IRX2014", f"parameter '{pname}' asks for a DNS account credential; declare the records in dns instead")
+
+
+def has_fa(node) -> bool:
+    """True when an i18n object anywhere under node has a Persian entry (fa or fa-XX)."""
+    if isinstance(node, dict):
+        return any((key == "fa" or key.startswith("fa-")) and value for key, value in node.items()) or any(has_fa(v) for v in node.values())
+    if isinstance(node, list):
+        return any(has_fa(v) for v in node)
+    return False
+
+
+def check_option_labels(where: str, metadata: dict, params: list[dict], report: Report) -> None:
+    """IRX2019: a script with Persian text whose choice options have no Persian label (specification v1.3 §7.7)."""
+    if not (has_fa((metadata.get("script") or {}).get("i18n")) or any(has_fa(p.get("i18n")) for p in params)):
+        return
+    for param in params:
+        if param.get("type") not in ("enum", "multi_select"):
+            continue
+        missing = [
+            str(option.get("value")) for option in param.get("options") or []
+            if isinstance(option, dict) and not any(
+                (lang == "fa" or lang.startswith("fa-")) and isinstance(entry, dict) and str(entry.get("label") or "").strip()
+                for lang, entry in (option.get("i18n") or {}).items())
+        ]
+        if missing:
+            report.warn(where, "IRX2019", f"param '{param.get('name', '?')}': the script has Persian text but options {', '.join(missing)} have no i18n.fa.label")
 
 
 def at_or_below(name: str, parent: str) -> bool:
@@ -433,7 +461,7 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
         return
     version = (metadata.get("standard") or {}).get("schema_version")
     if version == "1.3":
-        metadata_schema, param_schema = "iranux-metadata-v1.3.schema.json", "iranux-param-v1.2.schema.json"
+        metadata_schema, param_schema = "iranux-metadata-v1.3.schema.json", "iranux-param-v1.3.schema.json"
     elif version == "1.2":
         metadata_schema, param_schema = "iranux-metadata-v1.2.schema.json", "iranux-param-v1.2.schema.json"
     elif version == "1.1":
@@ -470,8 +498,17 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
         except ValueError as exc:
             report.error(where, "IRX1014", f"parameter block at line {line} is not strict JSON: {exc}")
             continue
-        for message in schema_errors(validators[param_schema], param):
-            report.error(where, "SCHEMA", f"param '{param.get('name', '?')}' (line {line}): {message}")
+        localized_options = [o for o in param.get("options") or [] if isinstance(o, dict) and "i18n" in o]
+        if localized_options and version != "1.3":
+            report.error(where, "IRX2017", f"param '{param.get('name', '?')}' (line {line}): options[].i18n requires schema version 1.3")
+        for error in sorted(validators[param_schema].iter_errors(param), key=lambda e: list(e.absolute_path)):
+            error_path = list(error.absolute_path)
+            in_option = len(error_path) >= 2 and error_path[0] == "options"
+            if in_option and version != "1.3" and len(error_path) == 2 and "'i18n'" in error.message:
+                continue  # reported as IRX2017
+            code = "IRX2018" if in_option and (error_path[2:3] == ["i18n"] or (len(error_path) == 2 and "'i18n'" in error.message)) else "SCHEMA"
+            location = "/".join(str(p) for p in error_path) or "<root>"
+            report.error(where, code, f"param '{param.get('name', '?')}' (line {line}): {location}: {error.message}")
         for field in decimal_integer_fields(param):
             report.warn(where, "IRX1014", f"param '{param.get('name', '?')}' {field} is a decimal number; the runner ignores that constraint")
         pattern = (param.get("validation") or {}).get("pattern")
@@ -486,6 +523,7 @@ def check_sample(path: Path, validators: dict[str, Draft202012Validator], mdi_na
 
     if version == "1.3":
         check_dns(where, metadata, params, text, profile, report)
+        check_option_labels(where, metadata, params, report)
 
     # Persian text quality (IRX1403) over every "fa" value in metadata and params.
     def walk_fa(node, path: str) -> None:
@@ -633,6 +671,7 @@ def main() -> int:
             "iranux-metadata-v1.3.schema.json",
             "iranux-param-v1.0.schema.json",
             "iranux-param-v1.2.schema.json",
+            "iranux-param-v1.3.schema.json",
             "iranux-result-v1.2.schema.json",
             "iranux-certification-v1.0.schema.json",
         )
