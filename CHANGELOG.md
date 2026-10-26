@@ -6,6 +6,21 @@ Current version. Specification: `docs/specification/iranux-script-specification-
 (the delta to v1.2; every v1.2 rule still applies). Rules:
 `docs/validator/validator-rules-v1.3.md`. Migration: `docs/migration/v1.2-to-v1.3.md`.
 
+### Added 2026-10-26
+
+- `options[].i18n.{lang}.label`: a localized label for each option of an `enum` or
+  `multi_select` parameter (specification v1.3 §7.7), so a Persian form shows `بله` and
+  `خیر` instead of `Yes` and `No`. Each entry needs a non-blank `label` and has nothing
+  else; the option's `value` never changes with the language.
+- `schemas/iranux-param-v1.3.schema.json` (the v1.2 parameter schema plus option labels),
+  used for every v1.3 parameter.
+- rules IRX2017 (option labels need 1.3), IRX2018 (an entry without a label) and the
+  warning IRX2019 (a script with Persian text whose choice options lack `i18n.fa.label`),
+  with fixtures and test scripts.
+- the converter prompt declares 1.3 and adds Persian option labels to every choice.
+
+### First release, 2026-10-25
+
 Added:
 
 - the optional `dns` member of `IRANUX_METADATA`: up to ten records (`A`, `AAAA`,
@@ -18,8 +33,8 @@ Added:
   as normative runner behaviour.
 - `IRANUX_DNS_STATUS` and `IRANUX_DNS_<ID>` in the script's environment.
 - rules IRX2001–IRX2016 and the run-time rules IRX2021–IRX2024; catalog rule IRX1909.
-- `schemas/iranux-metadata-v1.3.schema.json`; the parameter and result schemas stay at
-  v1.2.
+- `schemas/iranux-metadata-v1.3.schema.json`; the parameter and result schemas stayed at
+  v1.2 (the parameter schema moved to v1.3 on 2026-10-26, above).
 - a v1.3 sample (`Samples/v1.3/install-nginx-site-with-dns.sh`), metadata fixtures, and
   test scripts under `tests/scripts/` (valid ones must pass; each invalid one must fail
   with the rule its file name starts with).

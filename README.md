@@ -21,12 +21,13 @@ who is not a Linux expert.
 
 | Version | Date | Status | Specification | What it added |
 |---|---|---|---|---|
-| 1.3 | 2026-10 | current | [`docs/specification/iranux-script-specification-v1.3.md`](docs/specification/iranux-script-specification-v1.3.md) (delta to v1.2) | the `dns` block: the DNS records a script needs, created by the runner in the user's own DNS; `IRANUX_DNS_*` variables |
+| 1.3 | 2026-10 | current | [`docs/specification/iranux-script-specification-v1.3.md`](docs/specification/iranux-script-specification-v1.3.md) (delta to v1.2) | the `dns` block: the DNS records a script needs, created by the runner in the user's own DNS; `IRANUX_DNS_*` variables; localized option labels (`options[].i18n`) |
 | 1.2 | 2026-10 | valid | [`docs/specification/iranux-script-specification-v1.2.md`](docs/specification/iranux-script-specification-v1.2.md) | localized text (`i18n`, Persian first), basic/advanced parameters, generated values, the `IRANUX_RESULT` line, `estimated_minutes`; complete rules for certification, exit codes, transport, OS identifiers, risk levels, security |
 | 1.1 | 2026-06-16 | valid | [`docs/specification/iranux-bash-script-standard-v1.1.md`](docs/specification/iranux-bash-script-standard-v1.1.md) | required `ui` object: category, action, Material Design Icon |
 | 1.0 | 2026-05 | valid | the rules the v1.1 specification inherits, and `schemas/iranux-param-v1.0.schema.json` | metadata, parameters, certification concept, final marker |
 
-New scripts declare `1.2`, or `1.3` when they need DNS records. Migration guides:
+New scripts declare `1.2`, or `1.3` when they need DNS records or Persian labels for
+their choice options. Migration guides:
 [`docs/migration/v1.0-to-v1.1.md`](docs/migration/v1.0-to-v1.1.md),
 [`docs/migration/v1.1-to-v1.2.md`](docs/migration/v1.1-to-v1.2.md),
 [`docs/migration/v1.2-to-v1.3.md`](docs/migration/v1.2-to-v1.3.md).

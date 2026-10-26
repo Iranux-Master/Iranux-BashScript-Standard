@@ -8,6 +8,7 @@ holds documents that must fail. The file-name prefix selects the schema:
 | `metadata-v1.3-` | `schemas/iranux-metadata-v1.3.schema.json` |
 | `metadata-v1.2-` | `schemas/iranux-metadata-v1.2.schema.json` |
 | `v1.1-` | `schemas/iranux-metadata-v1.1.schema.json` |
+| `param-v1.3-` | `schemas/iranux-param-v1.3.schema.json` |
 | `param-v1.2-` | `schemas/iranux-param-v1.2.schema.json` |
 | `param-v1.0-` | `schemas/iranux-param-v1.0.schema.json` |
 | `result-v1.2-` | `schemas/iranux-result-v1.2.schema.json` |
@@ -17,7 +18,7 @@ The rest of the file name says what the fixture shows, for example
 `param-v1.2-advanced-required-no-default.json`.
 
 `scripts/` holds small test scripts for the cross-block rules the schemas cannot express
-(the DNS rules of v1.3). Every script in `scripts/valid/` must pass. Every script in
+(the DNS and option-label rules of v1.3). Every script in `scripts/valid/` must pass. Every script in
 `scripts/invalid/` is named `<rule id>-<what it shows>.sh` and must be reported with that
 rule and with no other error. The catalog profile applies to them only when the rule is a
 catalog rule (`IRX19xx`).

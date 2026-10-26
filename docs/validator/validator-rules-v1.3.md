@@ -8,9 +8,11 @@ document unchanged, in the same validation order. Levels are those of specificat
 ## Changes to the validation order
 
 - Step 6 selects the schema set `1.0`, `1.1`, `1.2` or `1.3` (IRX1001). A v1.3 document
-  uses `schemas/iranux-metadata-v1.3.schema.json` for its metadata and the v1.2
-  parameter and result schemas.
-- After step 8 (cross-block rules), apply the DNS rules (IRX20xx) to the `dns` member.
+  uses `schemas/iranux-metadata-v1.3.schema.json` for its metadata,
+  `schemas/iranux-param-v1.3.schema.json` for its parameters and the v1.2 result schema.
+- After step 8 (cross-block rules), apply the DNS rules (IRX2001–IRX2016) to the `dns`
+  member and IRX2017–IRX2018 to the options of every parameter.
+- In step 10 (localization rules), also apply IRX2019.
 - The run-time rules (IRX2021–IRX2023) need the anchor's value and the zone. The
   Validator cannot apply them; the runner applies them before it writes anything, and
   reports them in the same form.
@@ -50,6 +52,17 @@ record, is reported as IRX1016.
 | IRX2015 | W | an `after_run` record's `{output.<key>}` whose key appears in no literal `IRANUX_RESULT` line of the file | DNS record `<id>`: no IRANUX_RESULT line prints output `<key>`. |
 | IRX2016 | R | an `NS` record whose `name` is a beside-the-anchor template, whose `value` is its own name or below it, or whose name another record of the same `anchor` uses or lies below | DNS record `<id>`: a delegation is a name under the anchor that holds nothing else. |
 
+### Option labels (IRX2017–IRX2019)
+
+The v1.3 parameter schema enforces the shape of `options[].i18n`; a violation inside it
+is reported as IRX2018 with the schema path.
+
+| Id | Level | Check | Message |
+|---|---|---|---|
+| IRX2017 | R | a `1.0`, `1.1` or `1.2` document has an option with `i18n` | Parameter `<name>`: options[].i18n requires schema version 1.3. |
+| IRX2018 | R | an option `i18n` that is empty, has a key that is not a language tag, an entry without a non-blank `label` (up to 80 characters, no control character), or an entry member other than `label` | Parameter `<name>`, option `<value>`: each i18n entry needs a label and nothing else. |
+| IRX2019 | W | the script has a `fa` or `fa-XX` entry in `script.i18n` or in any parameter's `i18n`, and an option of an `enum` or `multi_select` parameter has no `i18n.fa.label` | Parameter `<name>`: the script has Persian text but options `<values>` have no i18n.fa.label. |
+
 ### Run-time rules (applied by the runner)
 
 | Id | Level | Check | Message |
@@ -70,7 +83,7 @@ record, is reported as IRX1016.
 
 `tools/check_fixtures.py` adds: the v1.3 metadata schema for `metadata-v1.3-` fixtures
 and v1.3 scripts; IRX2001, IRX2003 (duplicate ids), IRX2004, IRX2005, IRX2012, IRX2014,
-IRX2015, IRX2016 on scripts, IRX1016 for undefined members, the schema-enforced IRX20xx rules through the schema, and IRX1909
+IRX2015, IRX2016, IRX2017, IRX2019 on scripts, IRX2018 through the v1.3 parameter schema, IRX1016 for undefined members, the schema-enforced IRX20xx rules through the schema, and IRX1909
 with `--profile catalog`. Scripts under `tests/scripts/valid/` must pass; each script
 under `tests/scripts/invalid/` is named `<rule id>-<what it shows>.sh` and must fail
 with that rule only (the catalog profile applies to it only for an `IRX19xx` rule). The

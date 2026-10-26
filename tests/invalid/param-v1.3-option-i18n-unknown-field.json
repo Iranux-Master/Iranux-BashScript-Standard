@@ -1,0 +1,36 @@
+{
+  "name": "enable_firewall",
+  "label": "Open the web ports in the firewall?",
+  "description": "Choose Yes to open ports 80 and 443. No leaves the firewall as it is.",
+  "type": "enum",
+  "required": true,
+  "default": "N",
+  "options": [
+    {
+      "label": "Yes",
+      "value": "Y",
+      "i18n": {
+        "fa": {
+          "label": "بله",
+          "description": "باز کردن پورت‌ها"
+        }
+      }
+    },
+    {
+      "label": "No",
+      "value": "N",
+      "description": "Leave the firewall unchanged.",
+      "i18n": {
+        "fa": {
+          "label": "خیر"
+        }
+      }
+    }
+  ],
+  "i18n": {
+    "fa": {
+      "label": "پورت‌های وب در فایروال باز شوند؟",
+      "description": "با «بله» پورت‌های ۸۰ و ۴۴۳ باز می‌شوند. «خیر» فایروال را تغییر نمی‌دهد."
+    }
+  }
+}

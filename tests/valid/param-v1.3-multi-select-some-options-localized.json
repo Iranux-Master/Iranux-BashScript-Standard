@@ -1,0 +1,34 @@
+{
+  "name": "components",
+  "label": "Components",
+  "description": "Pick what to install.",
+  "type": "multi_select",
+  "required": true,
+  "default": [
+    "nginx"
+  ],
+  "options": [
+    {
+      "label": "Nginx",
+      "value": "nginx"
+    },
+    {
+      "label": "Firewall",
+      "value": "ufw",
+      "i18n": {
+        "fa": {
+          "label": "فایروال"
+        },
+        "en-GB": {
+          "label": "Firewall"
+        }
+      }
+    }
+  ],
+  "i18n": {
+    "fa": {
+      "label": "اجزا",
+      "description": "آنچه نصب شود را انتخاب کنید."
+    }
+  }
+}

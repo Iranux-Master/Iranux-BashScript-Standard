@@ -1,19 +1,24 @@
 # Iranux Script Specification v1.3
 
 Status: current version. Published 2026-10. Supersedes v1.2 as the version new scripts
-that need DNS records should declare. Scripts that declare `1.0`, `1.1` or `1.2` remain
+that need DNS records or Persian labels for their choice options should declare. Scripts that declare `1.0`, `1.1` or `1.2` remain
 valid under their own specifications.
 
-v1.3 adds one optional feature, the **`dns` block**: a script declares the DNS records it
-needs (an address record for its site, a delegation for a DNS tunnel, a DKIM record it
-creates while it runs), and the runner creates them in the user's own DNS before or
-after the run. The script never receives a DNS account credential.
+v1.3 adds two optional features:
+
+- the **`dns` block**: a script declares the DNS records it needs (an address record for
+  its site, a delegation for a DNS tunnel, a DKIM record it creates while it runs), and
+  the runner creates them in the user's own DNS before or after the run. The script
+  never receives a DNS account credential;
+- **localized option labels** (`options[].i18n`, §7.7): the label of each choice of an
+  `enum` or `multi_select` parameter can be given per language, so a Persian form no
+  longer shows English `Yes`/`No` answers.
 
 This document is the delta to v1.2. Every rule of
 [`iranux-script-specification-v1.2.md`](iranux-script-specification-v1.2.md) applies to
 a v1.3 document unchanged, with its section numbers, except where this document says
 otherwise. Section numbers below that already exist in v1.2 (for example §8.1) extend
-that section; §5.7 is new.
+that section; §5.7 is new, and §7.7 replaces v1.2 rule 7.7.6.
 
 ## 0. How to read this document
 
@@ -41,9 +46,11 @@ Additional terms:
 - Records created after a successful run from the script's own `IRANUX_RESULT` outputs
   (§5.7.6), for values only the script can produce, such as a DKIM key.
 - A warning for scripts that ask the user for a DNS account token (§10.6).
+- `options[].i18n.{lang}.label` on choice parameters (§7.7), with a warning for a script
+  that has Persian text but leaves a choice without its Persian label.
 
-Nothing else changes. Parameters, the result line, certification and the final marker
-are as in v1.2.
+Nothing else changes. The result line, certification and the final marker are as in
+v1.2; parameters are as in v1.2 except for the option labels.
 
 ## 2. Compatibility statement
 
@@ -53,10 +60,14 @@ are as in v1.2.
   Validator rejects `dns` there `[IRX2001]`. A script that uses `dns` MUST declare `1.3`
   **[R]**. A runner that knows v1.3 refuses an older document that has a `dns` member
   and MUST NOT act on it.
-- A v1.3 document that has no `dns` member is a v1.2 document in every respect except
-  the version string.
-- Parameters keep the v1.2 parameter schema; the result line keeps the v1.2 result
-  schema. There is no new block type.
+- A v1.3 document that has no `dns` member and no `options[].i18n` is a v1.2 document in
+  every respect except the version string.
+- Parameters use `schemas/iranux-param-v1.3.schema.json`: the v1.2 parameter schema plus
+  `options[].i18n`. The result line keeps the v1.2 result schema. There is no new block
+  type.
+- `options[].i18n` is defined only for documents that declare `1.3`. The v1.0 and v1.2
+  parameter schemas allow no additional option members, so the Validator rejects it
+  there `[IRX2017]`.
 - A runner that does not know v1.3 rejects the script (`[IRX1001]`, v1.2 §2). Catalog
   authors therefore publish v1.3 scripts only to runners that read it.
 
@@ -308,6 +319,44 @@ With `tunnel_domain` = `t.example.com` the runner writes `t-ns.example.com A <IP
 `t.example.com NS t-ns.example.com.`. More examples are in
 `tests/scripts/valid/` and `Samples/v1.3/`.
 
+## 6. Localized text (`i18n`)
+
+v1.2 §6 applies. §6.1 gains one place:
+
+| Place | Localizable fields |
+|---|---|
+| option `options[].i18n.{lang}` (§7.7) | `label` |
+
+The lookup order of v1.2 rule 6.2.3 (exact tag, then base language, then the English
+`label`) and the Persian text rules of v1.2 §6.3 apply to option labels.
+
+## 7. Parameters (`IRANUX_PARAM`)
+
+### 7.7 `options`
+
+v1.2 §7.7 applies, except that rule 7.7.6 is replaced by 7.7.6 to 7.7.9 below. An option
+is `{ "label", "value", "description"?, "i18n"? }`:
+
+| # | Rule | Level |
+|---|---|---|
+| 7.7.6 | `i18n` is optional. Each key is a language tag of v1.2 rule 6.2.1 (`fa`, `en`, `fa-IR`), and the object has at least one key. | R `[IRX2018]` |
+| 7.7.7 | Each `i18n` entry has a non-blank `label` and nothing else (no `description`, no `value`): the value the script receives never depends on the language. | R `[IRX2018]` |
+| 7.7.8 | A document that declares `1.0`, `1.1` or `1.2` has no `options[].i18n`. | R `[IRX2017]` |
+| 7.7.9 | When the script has Persian text (any `fa` or `fa-XX` entry in `script.i18n` or in a parameter's `i18n`), every option of every `enum` and `multi_select` parameter has `i18n.fa.label`. | W `[IRX2019]` |
+
+A yes/no choice keeps its literal values (`"Y"`, `"N"`) and gets the labels the user
+reads:
+
+```json
+"options": [
+  { "label": "Yes", "value": "Y", "i18n": { "fa": { "label": "بله" } } },
+  { "label": "No", "value": "N", "i18n": { "fa": { "label": "خیر" } } }
+]
+```
+
+The parameter's own `label` asks the question the options answer: "Set your own panel
+port?" with Yes and No, not "Choose the panel port" (A).
+
 ## 8. Execution contract
 
 ### 8.1 Environment
@@ -347,7 +396,7 @@ binds UDP or TCP port 53 or replaces the system DNS resolver is `dangerous` as b
 ## 14. Validation outcomes
 
 In addition to v1.2 §14, a v1.3 script is **Invalid** (R) when its `dns` member breaks a
-rule marked R in §5.7, and a run is refused before anything is written when a run-time
+rule marked R in §5.7 or an option's `i18n` breaks a rule marked R in §7.7, and a run is refused before anything is written when a run-time
 rule of §5.7.3 fails.
 
 ## 15. Versioning policy
@@ -373,4 +422,5 @@ v1.2 §16 applies, with these changes:
 | DNS records | the script description asks the user to create them by hand | declared in `dns`; the runner writes, waits for and removes them |
 | Environment | parameters only | plus `IRANUX_DNS_STATUS` and `IRANUX_DNS_<ID>` |
 | DNS credentials | not addressed | a script never asks for them (warning `IRX2014`) |
+| Choice options | English `label` only | plus `options[].i18n.{lang}.label`; a warning when a script with Persian text leaves a choice without it |
 | Catalog profile | schema `1.2` | `1.2` or `1.3`; Persian purpose for every record |
